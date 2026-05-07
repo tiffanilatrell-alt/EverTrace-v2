@@ -2,27 +2,27 @@ export const bannerPresets = [
   {
     id: "peace-garden",
     name: "Peace Garden",
-    imageUrl: "/peace-banner.png",
+    imageUrl: "/peace-banner.png?v=2",
   },
   {
     id: "spring-path",
     name: "Spring Path",
-    imageUrl: "/home-hero.jpg",
+    imageUrl: "/home-hero.jpg?v=2",
   },
   {
     id: "green-branch",
     name: "Green Branch",
-    imageUrl: "/greenbranch.png",
+    imageUrl: "/greenbranch.png?v=2",
   },
   {
     id: "soft-foliage",
     name: "Soft Foliage",
-    imageUrl: "/soft-foliage-bg.png",
+    imageUrl: "/soft-foliage-bg.png?v=2",
   },
   {
     id: "rooted-tree",
     name: "Rooted Tree",
-    imageUrl: "/treewithroots.png",
+    imageUrl: "/treewithroots.png?v=2",
   },
 ];
 
