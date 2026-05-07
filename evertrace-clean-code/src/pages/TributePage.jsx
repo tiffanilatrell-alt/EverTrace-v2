@@ -2,15 +2,18 @@ import { Copy, Leaf, Mail, MessageCircle, QrCode, Share2, X } from "lucide-react
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { defaultBanner, getBannerById } from "../data/bannerPresets";
+import LifeTimeline from "../shared/LifeTimeline";
 import PhotoGallery from "../shared/PhotoGallery";
 import {
   addMemory,
+  addTimelineEvent,
   addMemoryReaction,
   addPhotoReaction,
   addTributeReaction,
   getTribute,
   subscribeToMemories,
   subscribeToPhotos,
+  subscribeToTimelineEvents,
   subscribeToTribute,
 } from "../services/tributeService";
 
@@ -21,6 +24,7 @@ const reactions = [
 ];
 
 const emptyMemoryForm = { contributorName: "", text: "" };
+const emptyTimelineForm = { year: "", title: "", description: "" };
 const shareInviteText = "Invite family and friends to add their memories.";
 
 export default function TributePage() {
@@ -28,12 +32,16 @@ export default function TributePage() {
   const [tribute, setTribute] = useState(null);
   const [memories, setMemories] = useState([]);
   const [photos, setPhotos] = useState([]);
+  const [timelineEvents, setTimelineEvents] = useState([]);
   const [memoryForm, setMemoryForm] = useState(emptyMemoryForm);
+  const [timelineForm, setTimelineForm] = useState(emptyTimelineForm);
   const [isMemoryModalOpen, setIsMemoryModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isTimelineFormOpen, setIsTimelineFormOpen] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingMemory, setSavingMemory] = useState(false);
+  const [savingTimelineEvent, setSavingTimelineEvent] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -82,10 +90,17 @@ export default function TributePage() {
       () => setError("We could not keep photos updated in real time."),
     );
 
+    const unsubscribeTimelineEvents = subscribeToTimelineEvents(
+      tributeId,
+      setTimelineEvents,
+      () => setError("We could not keep the timeline updated in real time."),
+    );
+
     return () => {
       unsubscribeTribute();
       unsubscribeMemories();
       unsubscribePhotos();
+      unsubscribeTimelineEvents();
     };
   }, [tributeId]);
 
@@ -240,6 +255,22 @@ export default function TributePage() {
     }
   }
 
+  async function handleAddTimelineEvent(event) {
+    event.preventDefault();
+    setSavingTimelineEvent(true);
+    setError("");
+
+    try {
+      await addTimelineEvent(tribute.id, timelineForm);
+      setTimelineForm(emptyTimelineForm);
+      setIsTimelineFormOpen(false);
+    } catch (err) {
+      setError("We could not add that timeline moment yet. Please try again.");
+    } finally {
+      setSavingTimelineEvent(false);
+    }
+  }
+
   if (loading) {
     return (
       <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
@@ -346,6 +377,20 @@ export default function TributePage() {
             <p className="eyebrow">Their Story</p>
             <h2 className="mt-3 text-3xl font-semibold">A life remembered together</h2>
             <p className="mt-4 leading-8 text-ink/70">{tribute.message}</p>
+
+            <LifeTimeline
+              name={tribute.name}
+              birthYear={tribute.birthYear}
+              passingYear={tribute.passingYear}
+              events={timelineEvents}
+              form={timelineForm}
+              onFormChange={setTimelineForm}
+              onSubmit={handleAddTimelineEvent}
+              onCancel={() => setIsTimelineFormOpen(false)}
+              isAdding={isTimelineFormOpen}
+              onStartAdding={() => setIsTimelineFormOpen(true)}
+              saving={savingTimelineEvent}
+            />
 
             <PhotoGallery photos={photos} onReact={handlePhotoReaction} />
 

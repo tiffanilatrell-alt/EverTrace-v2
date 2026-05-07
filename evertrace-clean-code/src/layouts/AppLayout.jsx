@@ -7,6 +7,15 @@ const navItems = [
   { label: "Example", to: "/example" },
 ];
 
+const footerLinks = [
+  { label: "About Us", to: "/about" },
+  { label: "FAQs", to: "/faq" },
+  { label: "Related Articles", to: "/resources" },
+  { label: "Contact", to: "mailto:hello@evertrace.life" },
+  { label: "Privacy Policy", to: "#" },
+  { label: "Terms", to: "#" },
+];
+
 export default function AppLayout() {
   return (
     <div className="min-h-screen bg-cream text-ink">
@@ -43,8 +52,34 @@ export default function AppLayout() {
 
       <Outlet />
 
-      <footer className="border-t border-ink/10 px-4 py-8 text-center text-sm text-ink/60">
-        EverTrace V2. Digital tributes first, QR plaques when the family is ready.
+      <footer className="border-t border-ink/10 px-4 py-10 text-sm text-ink/60">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-center sm:text-left">EverTrace V2. Digital tributes first, QR plaques when the family is ready.</p>
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:justify-end">
+            {footerLinks.map((link) =>
+              link.to.startsWith("mailto") ? (
+                <a key={link.label} href={link.to} className="font-medium transition hover:text-deep-purple">
+                  {link.label}
+                </a>
+              ) : link.to === "#" ? (
+                <a key={link.label} href={link.to} className="font-medium transition hover:text-deep-purple">
+                  {link.label}
+                </a>
+              ) : (
+                <Link key={link.label} to={link.to} className="font-medium transition hover:text-deep-purple">
+                  {link.label}
+                </Link>
+              ),
+            )}
+            <a
+              href="https://www.facebook.com/"
+              className="inline-flex items-center gap-2 font-medium transition hover:text-deep-purple"
+              aria-label="EverTrace on Facebook"
+            >
+              <span className="grid size-5 place-items-center rounded-full bg-deep-purple text-xs font-bold text-white">f</span> Facebook
+            </a>
+          </nav>
+        </div>
       </footer>
     </div>
   );

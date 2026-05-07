@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Leaf, QrCode, Share2 } from "lucide-react";
+import { ArrowRight, BookOpen, HelpCircle, Leaf, Newspaper, QrCode, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const steps = [
@@ -16,6 +16,27 @@ const steps = [
     icon: QrCode,
     title: "Preserve it later",
     body: "When the tribute feels ready, connect it to a lasting QR memorial plaque.",
+  },
+];
+
+const teaserCards = [
+  {
+    icon: Leaf,
+    title: "About EverTrace",
+    body: "Learn why EverTrace begins with digital tribute pages and grows into lasting memorial connections.",
+    to: "/about",
+  },
+  {
+    icon: HelpCircle,
+    title: "FAQs",
+    body: "Get quick answers about tributes, privacy, sharing, photos, and optional QR plaques.",
+    to: "/faq",
+  },
+  {
+    icon: Newspaper,
+    title: "Related Articles",
+    body: "Read gentle guidance for writing tributes, inviting family stories, and preserving memories.",
+    to: "/resources",
   },
 ];
 
@@ -73,6 +94,25 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          {teaserCards.map((card) => (
+            <Link
+              key={card.to}
+              to={card.to}
+              className="group rounded-2xl border border-rich-purple/10 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-rich-purple/25 hover:shadow-soft"
+            >
+              <card.icon className="text-deep-purple" size={24} />
+              <h3 className="mt-5 text-xl font-semibold text-ink">{card.title}</h3>
+              <p className="mt-3 leading-7 text-ink/65">{card.body}</p>
+              <span className="mt-5 inline-flex items-center gap-2 font-semibold text-deep-purple transition group-hover:text-rich-purple">
+                Learn more <ArrowRight size={17} />
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="mx-auto grid max-w-6xl gap-6 px-4 pb-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <div>
           <p className="eyebrow">Example Tribute</p>
@@ -89,19 +129,36 @@ export default function Home() {
         </div>
 
         <div className="rounded-2xl border border-rich-purple/10 bg-white p-4 shadow-soft">
-          <div className="overflow-hidden rounded-2xl bg-[linear-gradient(150deg,#2D1B4E,#5A3E8C_55%,#E9E3F5)] p-5 text-white">
-            <div className="flex min-h-[420px] flex-col justify-end">
-              <p className="eyebrow-light">In Loving Memory</p>
-              <h3 className="mt-3 text-4xl font-semibold">Maya Bennett</h3>
-              <p className="mt-2 text-white/80">1948 - 2025</p>
-              <p className="mt-5 max-w-md leading-7 text-white/85">
-                A warm, steady presence remembered through stories, small rituals, and the people who loved her.
+          <div className="relative min-h-[420px] overflow-hidden rounded-2xl bg-deep-purple p-5 text-white">
+            <img src="/peace-banner.png" alt="Peaceful tribute banner" className="absolute inset-0 h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(45,27,78,0.75),rgba(45,27,78,0.55))]" />
+            <div className="relative flex min-h-[380px] flex-col justify-end">
+              <p className="eyebrow-light">Example Tribute</p>
+              <div className="mt-5 flex items-end gap-4">
+                <img
+                  src="/example-primary.png"
+                  alt="Jean E. White"
+                  className="h-32 w-24 shrink-0 rounded-[1.25rem] border border-white/25 object-cover object-[center_30%] p-1"
+                />
+                <div>
+                  <p className="eyebrow-light">In Loving Memory</p>
+                  <h3 className="mt-2 text-4xl font-semibold">Jean E. White</h3>
+                  <p className="mt-2 text-white/82">1950 - 2005</p>
+                </div>
+              </div>
+              <p className="mt-5 line-clamp-3 max-w-xl leading-7 text-white/88">
+                To know Jean was to feel remembered. She had a quiet confidence and a thoughtful way of speaking, and somehow she always made you believe in yourself.
               </p>
               <div className="mt-6 grid grid-cols-3 gap-2">
-                {["Candle", "Love", "Flowers"].map((label) => (
-                  <div key={label} className="rounded-2xl bg-white/12 px-3 py-3 text-center backdrop-blur">
-                    <p className="text-xs font-semibold text-white/70">{label}</p>
-                    <p className="mt-1 text-lg font-semibold">24</p>
+                {[
+                  ["\u{1F56F}\uFE0F", "Light a candle", "42"],
+                  ["\u{1F54A}\uFE0F", "Send your love", "86"],
+                  ["\u{1F338}", "Give flowers", "31"],
+                ].map(([icon, label, count]) => (
+                  <div key={label} className="rounded-2xl border border-white/28 bg-white/18 px-3 py-3 text-center text-white shadow-sm backdrop-blur">
+                    <p className="text-xl leading-none">{icon}</p>
+                    <p className="mt-2 truncate text-xs font-semibold text-white/82">{label}</p>
+                    <p className="mt-1 text-lg font-semibold">{count}</p>
                   </div>
                 ))}
               </div>
@@ -119,8 +176,12 @@ export default function Home() {
               A stainless steel QR plaque can connect a gravesite, urn space, memorial garden, or family keepsake directly to the tribute.
             </p>
           </div>
-          <div className="grid size-32 place-items-center rounded-2xl bg-white text-deep-purple shadow-sm">
-            <QrCode size={58} />
+          <div className="overflow-hidden rounded-2xl bg-white shadow-sm lg:w-72">
+            <img
+              src="/qrCodeInBox.jpg"
+              alt="QR memorial plaque displayed in a keepsake box"
+              className="aspect-[4/5] w-full object-cover"
+            />
           </div>
         </div>
       </section>

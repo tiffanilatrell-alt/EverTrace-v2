@@ -18,6 +18,7 @@ import { db, storage } from "../lib/firebaseClient";
 const TRIBUTES_COLLECTION = "tributes";
 const MEMORIES_COLLECTION = "memories";
 const PHOTOS_COLLECTION = "photos";
+const TIMELINE_COLLECTION = "timeline";
 
 export async function createTribute({
   name,
@@ -207,6 +208,41 @@ export function subscribeToPhotos(tributeId, onChange, onError) {
     onError,
   );
 }
+export function subscribeToTimelineEvents(tributeId, onChange, onError) {
+  const timelineQuery = query(
+    collection(db, TRIBUTES_COLLECTION, tributeId, TIMELINE_COLLECTION),
+    orderBy("yearNumber", "asc"),
+  );
+
+  return onSnapshot(
+    timelineQuery,
+    (timelineSnap) => {
+      onChange(
+        timelineSnap.docs.map((timelineDoc) => ({
+          id: timelineDoc.id,
+          ...timelineDoc.data(),
+        })),
+      );
+    },
+    onError,
+  );
+}
+
+export async function addTimelineEvent(tributeId, { year, title, description }) {
+  const cleanYear = year.trim();
+
+  const timelineRef = await addDoc(collection(db, TRIBUTES_COLLECTION, tributeId, TIMELINE_COLLECTION), {
+    tributeId,
+    year: cleanYear,
+    yearNumber: Number(cleanYear) || 0,
+    title: title.trim(),
+    description: description.trim(),
+    createdAt: serverTimestamp(),
+  });
+
+  return timelineRef.id;
+}
+
 
 export async function addTributeReaction(tributeId, reaction) {
   await updateDoc(doc(db, TRIBUTES_COLLECTION, tributeId), {
@@ -230,4 +266,5 @@ export const firestoreCollections = {
   tributes: TRIBUTES_COLLECTION,
   memories: `${TRIBUTES_COLLECTION}/{tributeId}/${MEMORIES_COLLECTION}`,
   photos: `${TRIBUTES_COLLECTION}/{tributeId}/${PHOTOS_COLLECTION}`,
+  timeline: `${TRIBUTES_COLLECTION}/{tributeId}/${TIMELINE_COLLECTION}`,
 };

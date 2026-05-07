@@ -2,6 +2,7 @@ import { Copy, Mail, MessageCircle, QrCode, Share2, Sparkles, X } from "lucide-r
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { getBannerById } from "../data/bannerPresets";
+import LifeTimeline from "../shared/LifeTimeline";
 import PhotoGallery from "../shared/PhotoGallery";
 
 const reactions = [
@@ -32,6 +33,23 @@ const memories = [
 ];
 
 const favorites = ["Garden roses", "Sunday dinners", "Old hymns", "Handwritten notes"];
+
+const sampleTimelineEvents = [
+  {
+    id: "family-home",
+    year: "1978",
+    yearNumber: 1978,
+    title: "Built a home full of welcome",
+    description: "Jean created the kind of home where people felt expected, fed, and remembered.",
+  },
+  {
+    id: "motherhood",
+    year: "1984",
+    yearNumber: 1984,
+    title: "A season of motherhood and care",
+    description: "Her steady love shaped the people who knew her most closely.",
+  },
+];
 
 const samplePhotos = [
   {
@@ -69,6 +87,9 @@ export default function ExampleTribute() {
   const [tributeReactions, setTributeReactions] = useState({ candle: 42, love: 86, flowers: 31 });
   const [sampleMemories, setSampleMemories] = useState(memories);
   const [galleryPhotos, setGalleryPhotos] = useState(samplePhotos);
+  const [timelineEvents, setTimelineEvents] = useState(sampleTimelineEvents);
+  const [timelineForm, setTimelineForm] = useState({ year: "", title: "", description: "" });
+  const [isTimelineFormOpen, setIsTimelineFormOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   function addTributeReaction(reactionKey) {
@@ -110,6 +131,22 @@ export default function ExampleTribute() {
           : photo,
       ),
     );
+  }
+
+  function addTimelineEvent(event) {
+    event.preventDefault();
+    setTimelineEvents((currentEvents) => [
+      ...currentEvents,
+      {
+        id: `${timelineForm.year}-${timelineForm.title}`,
+        year: timelineForm.year,
+        yearNumber: Number(timelineForm.year) || 0,
+        title: timelineForm.title,
+        description: timelineForm.description,
+      },
+    ]);
+    setTimelineForm({ year: "", title: "", description: "" });
+    setIsTimelineFormOpen(false);
   }
 
   return (
@@ -178,6 +215,19 @@ export default function ExampleTribute() {
             <p className="mt-4 leading-8 text-ink/70">
               She had a way of making everyone feel expected, as if the table had been waiting for them all along. This tribute gathers the stories, phrases, and everyday details that still carry her presence.
             </p>
+
+            <LifeTimeline
+              name="Jean E. White"
+              birthYear="1950"
+              passingYear="2005"
+              events={timelineEvents}
+              form={timelineForm}
+              onFormChange={setTimelineForm}
+              onSubmit={addTimelineEvent}
+              onCancel={() => setIsTimelineFormOpen(false)}
+              isAdding={isTimelineFormOpen}
+              onStartAdding={() => setIsTimelineFormOpen(true)}
+            />
 
             <PhotoGallery photos={galleryPhotos} onReact={addPhotoReaction} />
 

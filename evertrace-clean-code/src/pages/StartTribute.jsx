@@ -61,6 +61,10 @@ export default function StartTribute() {
     };
   }, []);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  }, [step]);
+
   function updateField(field, value) {
     setForm((current) => ({
       ...current,
@@ -221,10 +225,10 @@ export default function StartTribute() {
                 Start with one clear portrait if you have it. You can add up to 8 photos now and caption each one with a short memory.
               </div>
 
-              <label className="mt-7 grid cursor-pointer place-items-center rounded-[2rem] border border-dashed border-ink/20 bg-cream px-5 py-12 text-center transition hover:bg-stone">
-                <Camera className="text-deep-purple" size={34} />
-                <span className="mt-4 font-semibold text-ink">{photos.length ? "Add more photos to the gallery" : "Tap to add gallery photos"}</span>
-                <span className="mt-2 max-w-sm text-sm leading-6 text-ink/55">
+              <label className="mt-6 grid cursor-pointer place-items-center rounded-3xl border border-dashed border-ink/20 bg-cream px-5 py-7 text-center transition hover:bg-stone sm:py-8">
+                <Camera className="text-deep-purple" size={28} />
+                <span className="mt-3 font-semibold text-ink">{photos.length ? "Add more photos to the gallery" : "Tap to add gallery photos"}</span>
+                <span className="mt-1 max-w-sm text-sm leading-6 text-ink/55">
                   You can choose one as the primary photo after upload. Up to 8 photos for now.
                 </span>
                 <input
@@ -335,17 +339,16 @@ export default function StartTribute() {
               </div>
 
               <label className="block">
-                <span className="text-sm font-semibold text-ink/72">Tribute intro</span>
+                <span className="text-sm font-semibold text-ink/72">Tribute Story</span>
                 <textarea
                   value={form.message}
                   onChange={(event) => updateField("message", event.target.value)}
-                  placeholder="Share their story or a few words..."
+                  placeholder="This appears in the banner. Keep it to four lines so it fits beautifully."
                   rows={4}
                   maxLength={280}
                   className="mt-2 w-full resize-none rounded-3xl border border-ink/10 bg-cream px-4 py-4 leading-7 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:bg-white focus:ring-4 focus:ring-rich-purple/10"
                   required
                 />
-                <span className="mt-2 block text-sm leading-6 text-ink/50">This appears in the banner. Keep it to four lines so it fits beautifully.</span>
               </label>
 
               <div className="-mt-2 rounded-2xl border border-rich-purple/10 bg-white px-4 py-3 shadow-sm">
