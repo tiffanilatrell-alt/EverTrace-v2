@@ -1,0 +1,488 @@
+import { ArrowLeft, ArrowRight, Camera, Check, Star, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { bannerPresets, defaultBanner, getBannerById } from "../data/bannerPresets";
+import { createTribute, uploadTributePhotos } from "../services/tributeService";
+
+const initialForm = {
+  name: "",
+  birthYear: "",
+  passingYear: "",
+  message: "",
+  creatorName: "",
+  email: "",
+  bannerId: defaultBanner.id,
+};
+
+const prompts = [
+  "What made them special?",
+  "What do you hope people remember first?",
+  "What small thing still makes you think of them?",
+];
+
+function limitHeroMessage(value) {
+  return value.replace(/\r/g, "").split("\n").slice(0, 4).join("\n").slice(0, 280);
+}
+
+const stepCopy = {
+  1: {
+    title: "Start with photos",
+    body: "A familiar face often makes the next words easier. You can skip this for now.",
+  },
+  2: {
+    title: "Add one loving note",
+    body: "Add the essentials. Sharing, family memories, and plaques can come later.",
+  },
+  3: {
+    title: "Ready to publish",
+    body: "Create the tribute, then invite family to add their memories.",
+  },
+};
+
+export default function StartTribute() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState(initialForm);
+  const [step, setStep] = useState(1);
+  const [photos, setPhotos] = useState([]);
+  const [primaryPhotoId, setPrimaryPhotoId] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [savingLabel, setSavingLabel] = useState("Creating...");
+  const [error, setError] = useState("");
+  const photosRef = useRef([]);
+
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+
+  useEffect(() => {
+    return () => {
+      photosRef.current.forEach((photo) => URL.revokeObjectURL(photo.previewUrl));
+    };
+  }, []);
+
+  function updateField(field, value) {
+    setForm((current) => ({
+      ...current,
+      [field]: field === "message" ? limitHeroMessage(value) : value,
+    }));
+  }
+
+  function handlePhotoSelection(event) {
+    const selectedFiles = Array.from(event.target.files || []);
+    event.target.value = "";
+
+    if (!selectedFiles.length) return;
+
+    setError("");
+
+    setPhotos((currentPhotos) => {
+      const availableSlots = Math.max(8 - currentPhotos.length, 0);
+      const acceptedFiles = selectedFiles.slice(0, availableSlots);
+      const nextPhotos = [
+        ...currentPhotos,
+        ...acceptedFiles.map((file) => ({
+          id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
+          name: file.name,
+          file,
+          previewUrl: URL.createObjectURL(file),
+        })),
+      ];
+
+      if (selectedFiles.length > availableSlots) {
+        setError("You can add up to 8 photos for now.");
+      }
+
+      if (!primaryPhotoId && nextPhotos[0]) {
+        setPrimaryPhotoId(nextPhotos[0].id);
+      }
+
+      return nextPhotos;
+    });
+  }
+
+  function removePhoto(photoId) {
+    setPhotos((currentPhotos) => {
+      const photoToRemove = currentPhotos.find((photo) => photo.id === photoId);
+      if (photoToRemove) URL.revokeObjectURL(photoToRemove.previewUrl);
+
+      const nextPhotos = currentPhotos.filter((photo) => photo.id !== photoId);
+
+      if (primaryPhotoId === photoId) {
+        setPrimaryPhotoId(nextPhotos[0]?.id || "");
+      }
+
+      return nextPhotos;
+    });
+  }
+
+  function canContinueFromDetails() {
+    return form.name.trim() && form.message.trim() && form.creatorName.trim() && form.email.trim();
+  }
+
+  function goToNextStep() {
+    setError("");
+
+    if (step === 2 && !canContinueFromDetails()) {
+      setError("Add their name, a short message, your name, and your email to continue.");
+      return;
+    }
+
+    setStep((current) => Math.min(current + 1, 3));
+  }
+
+  function goBackStep() {
+    setError("");
+    setStep((current) => Math.max(current - 1, 1));
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+    setSavingLabel("Creating tribute...");
+
+    try {
+      const tributeId = await createTribute({
+        ...form,
+        bannerUrl: getBannerById(form.bannerId).imageUrl,
+        visibility: "public",
+      });
+
+      if (photos.length) {
+        setSavingLabel("Uploading photos...");
+        await uploadTributePhotos(tributeId, photos, primaryPhotoId || photos[0].id);
+      }
+
+      navigate(`/published/${tributeId}`);
+    } catch (err) {
+      setError("We could not create the tribute yet. Please check your Firebase setup and storage rules, then try again.");
+      setSaving(false);
+      setSavingLabel("Creating...");
+    }
+  }
+
+  const primaryPreviewPhoto = photos.find((photo) => photo.id === primaryPhotoId) || photos[0];
+  const selectedBanner = getBannerById(form.bannerId);
+  const previewYears = [form.birthYear, form.passingYear].filter(Boolean).join(" - ");
+  const previewName = form.name.trim() || "Their Name";
+  const previewMessage = form.message.trim() || "A few loving words will appear here as the tribute begins to take shape.";
+
+  return (
+    <main className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-7xl flex-col justify-center px-4 py-8 sm:px-6">
+      <Link to="/" className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-ink/60">
+        <ArrowLeft size={16} /> Home
+      </Link>
+
+      <section className="mb-6 rounded-2xl border border-rich-purple/10 bg-white/85 px-5 py-4 shadow-sm sm:px-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="eyebrow">Step {step} of 3</p>
+            <h1 className="mt-1 text-xl font-semibold tracking-tight text-ink sm:text-2xl">{stepCopy[step].title}</h1>
+          </div>
+          <span className="hidden rounded-full bg-light-purple px-3 py-1 text-xs font-semibold text-deep-purple sm:inline-flex">
+            {Math.round((step / 3) * 100)}%
+          </span>
+        </div>
+
+        <div className="mt-3 grid grid-cols-3 gap-1.5">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className={`h-1.5 rounded-full ${item <= step ? "bg-rich-purple" : "bg-light-purple"}`} />
+          ))}
+        </div>
+
+        {step === 2 && (
+          <div className="mt-5 grid gap-2 sm:grid-cols-3">
+            {prompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => updateField("message", form.message ? `${form.message}\n${prompt} ` : `${prompt} `)}
+                className="rounded-2xl border border-rich-purple/15 bg-light-purple/45 px-4 py-3 text-left text-sm leading-6 text-ink/75 transition hover:bg-light-purple"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.8fr)] lg:items-start">
+
+        <form onSubmit={handleSubmit} className="rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft sm:p-8">
+          {step === 1 && (
+            <div>
+              <p className="eyebrow">Photos</p>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-ink/62">Optional - you can skip this step.</p>
+
+              <div className="mt-6">
+                <p className="text-sm font-semibold text-ink/72">Choose a peaceful banner</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {bannerPresets.map((banner) => {
+                    const isSelected = form.bannerId === banner.id;
+
+                    return (
+                      <button
+                        key={banner.id}
+                        type="button"
+                        onClick={() => updateField("bannerId", banner.id)}
+                        className={`overflow-hidden rounded-2xl border text-left transition ${
+                          isSelected ? "border-rich-purple ring-4 ring-rich-purple/15" : "border-ink/10 hover:border-rich-purple/40"
+                        }`}
+                      >
+                        <img src={banner.imageUrl} alt={banner.name} className="h-28 w-full object-cover" />
+                        <span className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-ink">
+                          {banner.name}
+                          {isSelected && <Check className="text-deep-purple" size={17} />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <label className="mt-7 grid cursor-pointer place-items-center rounded-[2rem] border border-dashed border-ink/20 bg-cream px-5 py-12 text-center transition hover:bg-stone">
+                <Camera className="text-deep-purple" size={34} />
+                <span className="mt-4 font-semibold text-ink">{photos.length ? "Add more photos" : "Tap to add photos"}</span>
+                <span className="mt-2 text-sm leading-6 text-ink/55">Up to 8 photos</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  onChange={handlePhotoSelection}
+                />
+              </label>
+
+              {photos.length > 0 && (
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {photos.map((photo) => {
+                    const isPrimary = photo.id === primaryPhotoId;
+
+                    return (
+                      <div key={photo.id} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setPrimaryPhotoId(photo.id)}
+                          className={`group block aspect-square w-full overflow-hidden rounded-2xl border text-left transition ${
+                            isPrimary ? "border-rich-purple ring-4 ring-rich-purple/15" : "border-ink/10 hover:border-rich-purple/40"
+                          }`}
+                        >
+                          <img src={photo.previewUrl} alt={photo.name} className="h-full w-full object-cover" />
+                          <span className="absolute inset-x-2 bottom-2 inline-flex items-center justify-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold text-ink shadow-sm">
+                            <Star size={12} fill={isPrimary ? "currentColor" : "none"} />
+                            {isPrimary ? "Primary" : "Make primary"}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(photo.id)}
+                          className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-cream"
+                          aria-label={`Remove ${photo.name}`}
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="grid gap-5">
+              <TextField
+                label="Loved one's name"
+                value={form.name}
+                onChange={(value) => updateField("name", value)}
+                placeholder="Maya Bennett"
+                required
+              />
+
+              <div className="grid grid-cols-2 gap-3">
+                <TextField
+                  label="Birth year"
+                  type="number"
+                  value={form.birthYear}
+                  onChange={(value) => updateField("birthYear", value)}
+                  placeholder="1948"
+                />
+                <TextField
+                  label="Passing year"
+                  type="number"
+                  value={form.passingYear}
+                  onChange={(value) => updateField("passingYear", value)}
+                  placeholder="2025"
+                />
+              </div>
+
+              <label className="block">
+                <span className="text-sm font-semibold text-ink/72">Tribute intro</span>
+                <textarea
+                  value={form.message}
+                  onChange={(event) => updateField("message", event.target.value)}
+                  placeholder="To know them was to feel..."
+                  rows={4}
+                  maxLength={280}
+                  className="mt-2 w-full resize-none rounded-3xl border border-ink/10 bg-cream px-4 py-4 leading-7 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:bg-white focus:ring-4 focus:ring-rich-purple/10"
+                  required
+                />
+                <span className="mt-2 block text-sm leading-6 text-ink/50">This appears in the banner. Keep it to four lines so it fits beautifully.</span>
+              </label>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <TextField
+                  label="Creator name"
+                  value={form.creatorName}
+                  onChange={(value) => updateField("creatorName", value)}
+                  placeholder="Your name"
+                  required
+                />
+                <TextField
+                  label="Email"
+                  type="email"
+                  value={form.email}
+                  onChange={(value) => updateField("email", value)}
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <p className="eyebrow">Review</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight">{form.name || "Your tribute"}</h2>
+              <p className="mt-2 text-ink/60">
+                {[form.birthYear, form.passingYear].filter(Boolean).join(" - ") || "Years can be added later"}
+              </p>
+              <div className="mt-5 rounded-3xl bg-cream p-5">
+                <p className="line-clamp-4 leading-8 text-ink/70">{form.message}</p>
+              </div>
+              {photos.length > 0 && (
+                <div className="mt-5 rounded-3xl border border-ink/10 p-4">
+                  <p className="text-sm font-semibold text-ink/60">Primary photo</p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <img
+                      src={photos.find((photo) => photo.id === primaryPhotoId)?.previewUrl || photos[0].previewUrl}
+                      alt="Selected primary"
+                      className="size-16 rounded-2xl object-cover"
+                    />
+                    <p className="text-sm leading-6 text-ink/60">{photos.length} photo{photos.length === 1 ? "" : "s"} selected.</p>
+                  </div>
+                </div>
+              )}
+              <div className="mt-5 flex items-center gap-3 rounded-2xl border border-ink/10 px-4 py-3 text-sm text-ink/60">
+                <Check className="shrink-0 text-deep-purple" size={18} />
+                After publishing, you can share the link and invite family to add memories.
+              </div>
+            </div>
+          )}
+
+          {error && <p className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">{error}</p>}
+
+          <div className="mt-7 grid gap-3 sm:grid-cols-[auto_1fr]">
+            {step > 1 && (
+              <button
+                type="button"
+                onClick={goBackStep}
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-rich-purple/35 bg-white px-5 font-semibold text-ink transition hover:bg-stone"
+              >
+                Back
+              </button>
+            )}
+            {step < 3 ? (
+              <button
+                type="button"
+                onClick={goToNextStep}
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-deep-purple px-5 py-3 font-semibold text-white transition hover:bg-rich-purple"
+              >
+                {step === 1 && photos.length === 0 ? "Continue without photos" : "Continue"} <ArrowRight size={18} />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-deep-purple px-5 py-3 font-semibold text-white transition hover:bg-rich-purple disabled:cursor-not-allowed disabled:bg-deep-purple/45"
+              >
+                {saving ? savingLabel : "Create Tribute"} <ArrowRight size={18} />
+              </button>
+            )}
+          </div>
+        </form>
+
+        <div className="lg:hidden">
+          <details className="rounded-[2rem] border border-rich-purple/10 bg-white p-4 shadow-soft">
+            <summary className="eyebrow cursor-pointer list-none">
+              Show preview
+            </summary>
+            <div className="mt-4">
+              <TributePreview
+                name={previewName}
+                years={previewYears}
+                message={previewMessage}
+                primaryPhoto={primaryPreviewPhoto}
+                banner={selectedBanner}
+                compact
+              />
+            </div>
+          </details>
+        </div>
+
+        <aside className="hidden lg:sticky lg:top-24 lg:block">
+          <TributePreview
+            name={previewName}
+            years={previewYears}
+            message={previewMessage}
+            primaryPhoto={primaryPreviewPhoto}
+            banner={selectedBanner}
+          />
+        </aside>
+      </section>
+    </main>
+  );
+}
+
+function TributePreview({ name, years, message, primaryPhoto, banner, compact = false }) {
+  return (
+    <div className={compact ? "" : "rounded-[2rem] border border-rich-purple/10 bg-white p-4 shadow-soft"}>
+      {!compact && <p className="eyebrow px-2 pb-3">Preview</p>}
+      <div className="overflow-hidden rounded-[1.5rem] bg-deep-purple shadow-soft">
+        <div className={`relative ${compact ? "min-h-[260px]" : "min-h-[420px]"}`}>
+          <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-deep-purple/90 via-deep-purple/35 to-deep-purple/10" />
+          <div className={`relative flex flex-col justify-end p-5 text-white ${compact ? "min-h-[260px]" : "min-h-[420px]"}`}>
+            <p className="eyebrow-light">In Loving Memory</p>
+            <h2 className={`${compact ? "text-2xl" : "text-3xl"} mt-2 font-semibold tracking-tight`}>{name}</h2>
+            <p className="mt-1 text-sm text-white/75">{years || "Years can be added later"}</p>
+            <p className="mt-4 line-clamp-4 text-sm leading-6 text-white/82">{message}</p>
+            {primaryPhoto && (
+              <div className="mt-5 flex items-center gap-3 rounded-2xl bg-white/12 p-3 backdrop-blur">
+                <img src={primaryPhoto.previewUrl} alt="Primary portrait preview" className="size-12 rounded-full object-cover" />
+                <p className="text-xs font-semibold text-white/75">Primary photo selected</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TextField({ label, value, onChange, placeholder, type = "text", required = false }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold text-ink/72">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        required={required}
+        className="mt-2 min-h-12 w-full rounded-full border border-ink/10 bg-cream px-4 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:bg-white focus:ring-4 focus:ring-rich-purple/10"
+      />
+    </label>
+  );
+}
