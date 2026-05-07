@@ -26,7 +26,7 @@ export const bannerPresets = [
   },
 ];
 
-export const defaultBanner = bannerPresets[0];
+export const defaultBanner = bannerPresets.find((banner) => banner.id === "spring-path");
 
 export function getBannerById(bannerId) {
   return bannerPresets.find((banner) => banner.id === bannerId) || defaultBanner;

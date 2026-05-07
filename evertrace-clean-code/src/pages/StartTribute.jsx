@@ -28,7 +28,7 @@ function limitHeroMessage(value) {
 const stepCopy = {
   1: {
     title: "Start with photos",
-    body: "A familiar face often makes the next words easier. You can skip this for now.",
+    body: "Add a few photos of your loved one, then choose one as their primary image.",
   },
   2: {
     title: "Add one loving note",
@@ -85,6 +85,7 @@ export default function StartTribute() {
           id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
           name: file.name,
           file,
+          caption: "",
           previewUrl: URL.createObjectURL(file),
         })),
       ];
@@ -114,6 +115,19 @@ export default function StartTribute() {
 
       return nextPhotos;
     });
+  }
+
+  function updatePhotoCaption(photoId, caption) {
+    setPhotos((currentPhotos) =>
+      currentPhotos.map((photo) =>
+        photo.id === photoId
+          ? {
+              ...photo,
+              caption: caption.slice(0, 120),
+            }
+          : photo,
+      ),
+    );
   }
 
   function canContinueFromDetails() {
@@ -191,20 +205,6 @@ export default function StartTribute() {
           ))}
         </div>
 
-        {step === 2 && (
-          <div className="mt-5 grid gap-2 sm:grid-cols-3">
-            {prompts.map((prompt) => (
-              <button
-                key={prompt}
-                type="button"
-                onClick={() => updateField("message", form.message ? `${form.message}\n${prompt} ` : `${prompt} `)}
-                className="rounded-2xl border border-rich-purple/15 bg-light-purple/45 px-4 py-3 text-left text-sm leading-6 text-ink/75 transition hover:bg-light-purple"
-              >
-                {prompt}
-              </button>
-            ))}
-          </div>
-        )}
       </section>
 
       <section className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.8fr)] lg:items-start">
@@ -213,10 +213,74 @@ export default function StartTribute() {
           {step === 1 && (
             <div>
               <p className="eyebrow">Photos</p>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-ink/62">Optional - you can skip this step.</p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-ink">Add photos of your loved one</h2>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-ink/62">
+                Choose a few favorite moments for the gallery. After you upload them, tap the photo you want to use as the primary image at the top of the tribute.
+              </p>
+              <div className="mt-5 rounded-2xl border border-rich-purple/10 bg-light-purple/35 px-4 py-3 text-sm leading-6 text-ink/68">
+                Start with one clear portrait if you have it. You can add up to 8 photos now and caption each one with a short memory.
+              </div>
 
-              <div className="mt-6">
+              <label className="mt-7 grid cursor-pointer place-items-center rounded-[2rem] border border-dashed border-ink/20 bg-cream px-5 py-12 text-center transition hover:bg-stone">
+                <Camera className="text-deep-purple" size={34} />
+                <span className="mt-4 font-semibold text-ink">{photos.length ? "Add more photos to the gallery" : "Tap to add gallery photos"}</span>
+                <span className="mt-2 max-w-sm text-sm leading-6 text-ink/55">
+                  You can choose one as the primary photo after upload. Up to 8 photos for now.
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="sr-only"
+                  onChange={handlePhotoSelection}
+                />
+              </label>
+
+              {photos.length > 0 && (
+                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {photos.map((photo) => {
+                    const isPrimary = photo.id === primaryPhotoId;
+
+                    return (
+                      <div key={photo.id} className="rounded-2xl border border-ink/10 bg-cream p-2">
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setPrimaryPhotoId(photo.id)}
+                            className={`group block aspect-square w-full overflow-hidden rounded-2xl border text-left transition ${
+                              isPrimary ? "border-rich-purple ring-4 ring-rich-purple/15" : "border-ink/10 hover:border-rich-purple/40"
+                            }`}
+                          >
+                            <img src={photo.previewUrl} alt={photo.name} className="h-full w-full object-cover" />
+                            <span className="absolute inset-x-2 bottom-2 inline-flex items-center justify-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold text-ink shadow-sm">
+                              <Star size={12} fill={isPrimary ? "currentColor" : "none"} />
+                              {isPrimary ? "Primary" : "Make primary"}
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removePhoto(photo.id)}
+                            className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-cream"
+                            aria-label={`Remove ${photo.name}`}
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                        <input
+                          value={photo.caption}
+                          onChange={(event) => updatePhotoCaption(photo.id, event.target.value)}
+                          placeholder="Add a caption"
+                          className="mt-2 min-h-10 w-full rounded-full border border-ink/10 bg-white px-3 text-sm outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-7">
                 <p className="text-sm font-semibold text-ink/72">Choose a peaceful banner</p>
+                <p className="mt-2 text-sm leading-6 text-ink/55">This image sits behind the name and tribute message.</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   {bannerPresets.map((banner) => {
                     const isSelected = form.bannerId === banner.id;
@@ -240,53 +304,6 @@ export default function StartTribute() {
                   })}
                 </div>
               </div>
-
-              <label className="mt-7 grid cursor-pointer place-items-center rounded-[2rem] border border-dashed border-ink/20 bg-cream px-5 py-12 text-center transition hover:bg-stone">
-                <Camera className="text-deep-purple" size={34} />
-                <span className="mt-4 font-semibold text-ink">{photos.length ? "Add more photos" : "Tap to add photos"}</span>
-                <span className="mt-2 text-sm leading-6 text-ink/55">Up to 8 photos</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="sr-only"
-                  onChange={handlePhotoSelection}
-                />
-              </label>
-
-              {photos.length > 0 && (
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {photos.map((photo) => {
-                    const isPrimary = photo.id === primaryPhotoId;
-
-                    return (
-                      <div key={photo.id} className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setPrimaryPhotoId(photo.id)}
-                          className={`group block aspect-square w-full overflow-hidden rounded-2xl border text-left transition ${
-                            isPrimary ? "border-rich-purple ring-4 ring-rich-purple/15" : "border-ink/10 hover:border-rich-purple/40"
-                          }`}
-                        >
-                          <img src={photo.previewUrl} alt={photo.name} className="h-full w-full object-cover" />
-                          <span className="absolute inset-x-2 bottom-2 inline-flex items-center justify-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold text-ink shadow-sm">
-                            <Star size={12} fill={isPrimary ? "currentColor" : "none"} />
-                            {isPrimary ? "Primary" : "Make primary"}
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(photo.id)}
-                          className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-white/90 text-ink shadow-sm transition hover:bg-cream"
-                          aria-label={`Remove ${photo.name}`}
-                        >
-                          <X size={15} />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           )}
 
@@ -322,7 +339,7 @@ export default function StartTribute() {
                 <textarea
                   value={form.message}
                   onChange={(event) => updateField("message", event.target.value)}
-                  placeholder="To know them was to feel..."
+                  placeholder="Share their story or a few words..."
                   rows={4}
                   maxLength={280}
                   className="mt-2 w-full resize-none rounded-3xl border border-ink/10 bg-cream px-4 py-4 leading-7 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:bg-white focus:ring-4 focus:ring-rich-purple/10"
@@ -330,6 +347,36 @@ export default function StartTribute() {
                 />
                 <span className="mt-2 block text-sm leading-6 text-ink/50">This appears in the banner. Keep it to four lines so it fits beautifully.</span>
               </label>
+
+              <div className="-mt-2 rounded-2xl border border-rich-purple/10 bg-white px-4 py-3 shadow-sm">
+                <p className="text-sm font-semibold text-ink">Need help finding the words?</p>
+                <p className="mt-1 text-sm leading-6 text-ink/60">
+                  Share their story or a few words, and we can help shape them into something you can edit.
+                </p>
+                <button
+                  type="button"
+                  disabled
+                  className="mt-3 inline-flex min-h-10 items-center justify-center rounded-full border border-rich-purple/25 bg-light-purple/45 px-4 text-sm font-semibold text-deep-purple"
+                >
+                  Help Me Shape This
+                </button>
+              </div>
+
+              <div className="-mt-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Need a starting point?</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                  {prompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => updateField("message", form.message ? `${form.message}\n${prompt} ` : `${prompt} `)}
+                      className="rounded-2xl border border-rich-purple/15 bg-light-purple/45 px-4 py-3 text-left text-sm leading-6 text-ink/75 transition hover:bg-light-purple"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField

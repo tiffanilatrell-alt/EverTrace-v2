@@ -68,6 +68,11 @@ export default function PhotoGallery({ photos, onReact }) {
         </div>
 
         <div className="border-t border-ink/10 bg-white p-3 sm:p-4">
+          {activePhoto.caption && (
+            <p className="mb-3 text-center text-sm leading-6 text-ink/65 sm:text-base sm:leading-7">
+              {activePhoto.caption}
+            </p>
+          )}
           <div className="grid grid-cols-3 gap-2">
             {reactions.map((reaction) => (
               <button

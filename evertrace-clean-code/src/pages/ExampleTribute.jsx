@@ -38,24 +38,28 @@ const samplePhotos = [
     id: "mom-dad-halloween",
     photoUrl: "/mom-dad-halloween.jpg",
     alt: "Jean with family at Halloween",
+    caption: "A playful Halloween night, full of laughter and closeness.",
     reactionCounts: { candle: 5, love: 12, flowers: 6 },
   },
   {
     id: "mom-larron",
     photoUrl: "/mom-larron.jpg",
     alt: "Jean with Larron",
+    caption: "Jean and Larron, dressed up and smiling through the noise of a family gathering.",
     reactionCounts: { candle: 3, love: 10, flowers: 4 },
   },
   {
     id: "mom-combing-hair",
     photoUrl: "/mom-combing-hair.jpg",
     alt: "Jean combing hair",
+    caption: "One of those ordinary moments that says everything about care.",
     reactionCounts: { candle: 8, love: 14, flowers: 5 },
   },
   {
     id: "mom-flowers",
     photoUrl: "/mom-flowers.jpg",
     alt: "Jean holding flowers",
+    caption: "Jean with flowers, looking soft, proud, and beautiful.",
     reactionCounts: { candle: 6, love: 16, flowers: 9 },
   },
 ];

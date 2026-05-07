@@ -26,8 +26,8 @@ export async function createTribute({
   message,
   creatorName,
   email,
-  bannerId = "peace-garden",
-  bannerUrl = "/peace-banner.png",
+  bannerId = "spring-path",
+  bannerUrl = "/home-hero.jpg",
   visibility = "public",
 }) {
   const tributeRef = await addDoc(collection(db, TRIBUTES_COLLECTION), {
@@ -72,6 +72,7 @@ export async function uploadTributePhotos(tributeId, photos, primaryPhotoId) {
       const photoDoc = await addDoc(collection(db, TRIBUTES_COLLECTION, tributeId, PHOTOS_COLLECTION), {
         tributeId,
         photoUrl,
+        caption: photo.caption?.trim() || "",
         storagePath,
         isPrimary,
         reactionCounts: {
@@ -86,6 +87,7 @@ export async function uploadTributePhotos(tributeId, photos, primaryPhotoId) {
         id: photoDoc.id,
         tributeId,
         photoUrl,
+        caption: photo.caption?.trim() || "",
         storagePath,
         isPrimary,
       };

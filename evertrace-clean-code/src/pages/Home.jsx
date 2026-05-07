@@ -30,7 +30,7 @@ export default function Home() {
           <div className="grid size-14 place-items-center rounded-full border border-white/20 bg-white/10 backdrop-blur">
             <Leaf size={26} />
           </div>
-          <p className="eyebrow-light mt-8">Prince is hot</p>
+          <p className="eyebrow-light mt-8">EverTrace Memorials</p>
           <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
             Every life leaves trace, we help you preserve it.
           </h1>
