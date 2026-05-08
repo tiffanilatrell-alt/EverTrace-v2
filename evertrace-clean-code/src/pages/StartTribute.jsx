@@ -7,22 +7,66 @@ import { createTribute, uploadTributePhotos } from "../services/tributeService";
 
 const initialForm = {
   name: "",
+  birthDate: "",
+  passingDate: "",
   birthYear: "",
   passingYear: "",
   message: "",
+  story: "",
   creatorName: "",
   email: "",
   bannerId: defaultBanner.id,
 };
 
-const prompts = [
-  "What made them special?",
-  "What do you hope people remember first?",
-  "What small thing still makes you think of them?",
-];
-
 function limitHeroMessage(value) {
   return value.replace(/\r/g, "").split("\n").slice(0, 4).join("\n").slice(0, 280);
+}
+
+function formatDateInput(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function getYearFromDate(value) {
+  const match = value.match(/^\d{2}\/\d{2}\/(\d{4})$/);
+  return match?.[1] || "";
+}
+
+function parseDateInput(value) {
+  if (!value.trim()) return null;
+
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+
+  const month = Number(match[1]);
+  const day = Number(match[2]);
+  const year = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+
+  return date;
+}
+
+function trimFormValues(form) {
+  return {
+    ...form,
+    name: form.name.trim(),
+    birthDate: form.birthDate.trim(),
+    passingDate: form.passingDate.trim(),
+    birthYear: form.birthYear.trim(),
+    passingYear: form.passingYear.trim(),
+    message: form.message.trim(),
+    story: form.story.trim(),
+    creatorName: form.creatorName.trim(),
+    email: form.email.trim(),
+  };
 }
 
 const stepCopy = {
@@ -76,7 +120,23 @@ export default function StartTribute() {
 
     setForm((current) => ({
       ...current,
-      [field]: field === "message" ? limitHeroMessage(value) : value,
+      ...(field === "birthDate"
+        ? {
+            birthDate: formatDateInput(value),
+            birthYear: getYearFromDate(formatDateInput(value)),
+          }
+        : {}),
+      ...(field === "passingDate"
+        ? {
+            passingDate: formatDateInput(value),
+            passingYear: getYearFromDate(formatDateInput(value)),
+          }
+        : {}),
+      ...(!["birthDate", "passingDate"].includes(field)
+        ? {
+            [field]: field === "message" ? limitHeroMessage(value) : value,
+          }
+        : {}),
     }));
   }
 
@@ -196,14 +256,31 @@ export default function StartTribute() {
   }
 
   function canContinueFromDetails() {
-    return form.name.trim() && form.message.trim() && form.creatorName.trim() && form.email.trim();
+    return form.name.trim() && form.message.trim() && form.story.trim() && form.creatorName.trim() && form.email.trim();
+  }
+
+  function getDateValidationError() {
+    const birthDate = parseDateInput(form.birthDate);
+    const passingDate = parseDateInput(form.passingDate);
+
+    if (form.birthDate.trim() && !birthDate) return "Enter the birth date as MM/DD/YYYY.";
+    if (form.passingDate.trim() && !passingDate) return "Enter the passing date as MM/DD/YYYY.";
+    if (birthDate && passingDate && passingDate < birthDate) return "Passing date should be after the birth date.";
+
+    return "";
   }
 
   function goToNextStep() {
     setError("");
 
     if (step === 2 && !canContinueFromDetails()) {
-      setError("Add their name, a short message, your name, and your email to continue.");
+      setError("Add their name, banner intro, full story, your name, and your email to continue.");
+      return;
+    }
+
+    const dateError = step === 2 ? getDateValidationError() : "";
+    if (dateError) {
+      setError(dateError);
       return;
     }
 
@@ -222,9 +299,10 @@ export default function StartTribute() {
     setSavingLabel("Creating tribute...");
 
     try {
+      const cleanedForm = trimFormValues(form);
       const tributeId = await createTribute({
-        ...form,
-        bannerUrl: getBannerById(form.bannerId).imageUrl,
+        ...cleanedForm,
+        bannerUrl: getBannerById(cleanedForm.bannerId).imageUrl,
         visibility: "public",
       });
 
@@ -384,23 +462,28 @@ export default function StartTribute() {
 
               <div className="grid grid-cols-2 gap-3">
                 <TextField
-                  label="Birth year"
-                  type="number"
-                  value={form.birthYear}
-                  onChange={(value) => updateField("birthYear", value)}
-                  placeholder="1948"
+                  label="Birth date"
+                  value={form.birthDate}
+                  onChange={(value) => updateField("birthDate", value)}
+                  placeholder="MM/DD/YYYY"
+                  inputMode="numeric"
+                  maxLength={10}
                 />
                 <TextField
-                  label="Passing year"
-                  type="number"
-                  value={form.passingYear}
-                  onChange={(value) => updateField("passingYear", value)}
-                  placeholder="2025"
+                  label="Passing date"
+                  value={form.passingDate}
+                  onChange={(value) => updateField("passingDate", value)}
+                  placeholder="MM/DD/YYYY"
+                  inputMode="numeric"
+                  maxLength={10}
                 />
               </div>
+              <p className="-mt-3 text-sm leading-6 text-ink/50">
+                Full dates are saved privately for timeline accuracy. The public profile shows only the years.
+              </p>
 
               <label className="block">
-                <span className="text-sm font-semibold text-ink/72">Tribute intro</span>
+                <span className="text-sm font-semibold text-ink/72">Banner Intro</span>
                 <textarea
                   value={form.message}
                   onChange={(event) => updateField("message", event.target.value)}
@@ -414,17 +497,17 @@ export default function StartTribute() {
               </label>
 
               <div className="-mt-2 rounded-2xl border border-rich-purple/10 bg-white px-4 py-3 shadow-sm">
-                <p className="text-sm font-semibold text-ink">Need help finding the words?</p>
+                <p className="text-sm font-semibold text-ink">Need help with the banner intro?</p>
                 <p className="mt-1 text-sm leading-6 text-ink/60">
-                  Share their story or a few words, and we can help shape them into something you can edit.
+                  Add a few rough words above, and we can shape them into a short intro you can edit.
                 </p>
                 <button
                   type="button"
                   onClick={handleShapeTribute}
-                  disabled={aiLoading || !form.message.trim()}
+                  disabled={aiLoading}
                   className="mt-3 inline-flex min-h-10 items-center justify-center rounded-full border border-rich-purple/25 bg-light-purple/45 px-4 text-sm font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  {aiLoading ? "Shaping..." : "Help Me Shape This"}
+                  {aiLoading ? "Shaping..." : "Shape Banner Intro"}
                 </button>
                 {aiError && <p className="mt-3 text-sm leading-6 text-red-700">{aiError}</p>}
                 {aiSuggestion && (
@@ -444,21 +527,20 @@ export default function StartTribute() {
                 )}
               </div>
 
-              <div className="-mt-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Need a starting point?</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                  {prompts.map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      onClick={() => updateField("message", form.message ? `${form.message}\n${prompt} ` : `${prompt} `)}
-                      className="rounded-2xl border border-rich-purple/15 bg-light-purple/45 px-4 py-3 text-left text-sm leading-6 text-ink/75 transition hover:bg-light-purple"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <label className="block rounded-3xl border-2 border-rich-purple/20 bg-light-purple/30 p-5 shadow-sm">
+                <span className="text-sm font-semibold text-ink/72">Full Tribute Story</span>
+                <span className="mt-1 block text-sm leading-6 text-ink/55">
+                  This is the heart of the tribute and appears in the main story section. Add the fuller version of their life, personality, and what you want people to remember.
+                </span>
+                <textarea
+                  value={form.story}
+                  onChange={(event) => updateField("story", event.target.value)}
+                  placeholder="Tell the story in your own words. You can write a few sentences now and add more later..."
+                  rows={7}
+                  className="mt-3 w-full resize-none rounded-3xl border border-ink/10 bg-white px-4 py-4 leading-7 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
+                  required
+                />
+              </label>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField
@@ -488,8 +570,15 @@ export default function StartTribute() {
                 {[form.birthYear, form.passingYear].filter(Boolean).join(" - ") || "Years can be added later"}
               </p>
               <div className="mt-5 rounded-3xl bg-cream p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Banner Intro</p>
                 <p className="line-clamp-4 leading-8 text-ink/70">{form.message}</p>
               </div>
+              {form.story.trim() && (
+                <div className="mt-4 rounded-3xl border border-ink/10 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Full Story</p>
+                  <p className="mt-3 line-clamp-6 whitespace-pre-line leading-8 text-ink/70">{form.story}</p>
+                </div>
+              )}
               {photos.length > 0 && (
                 <div className="mt-5 rounded-3xl border border-ink/10 p-4">
                   <p className="text-sm font-semibold text-ink/60">Primary photo</p>
@@ -600,7 +689,7 @@ function TributePreview({ name, years, message, primaryPhoto, banner, compact = 
   );
 }
 
-function TextField({ label, value, onChange, placeholder, type = "text", required = false }) {
+function TextField({ label, value, onChange, placeholder, type = "text", required = false, inputMode, maxLength }) {
   return (
     <label className="block">
       <span className="text-sm font-semibold text-ink/72">{label}</span>
@@ -610,6 +699,8 @@ function TextField({ label, value, onChange, placeholder, type = "text", require
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         required={required}
+        inputMode={inputMode}
+        maxLength={maxLength}
         className="mt-2 min-h-12 w-full rounded-full border border-ink/10 bg-cream px-4 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:bg-white focus:ring-4 focus:ring-rich-purple/10"
       />
     </label>

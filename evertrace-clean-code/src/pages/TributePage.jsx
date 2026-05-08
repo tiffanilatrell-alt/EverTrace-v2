@@ -297,7 +297,8 @@ export default function TributePage() {
   }
 
   const years = [tribute.birthYear, tribute.passingYear].filter(Boolean).join(" - ");
-  const hasContent = Boolean(tribute.message || memories.length > 0);
+  const storyText = tribute.story || tribute.message;
+  const hasContent = Boolean(tribute.message || tribute.story || memories.length > 0);
   const banner = tribute.bannerUrl ? { imageUrl: tribute.bannerUrl, name: "Tribute banner" } : getBannerById(tribute.bannerId || defaultBanner.id);
 
   return (
@@ -376,7 +377,7 @@ export default function TributePage() {
           <section>
             <p className="eyebrow">Their Story</p>
             <h2 className="mt-3 text-3xl font-semibold">A life remembered together</h2>
-            <p className="mt-4 leading-8 text-ink/70">{tribute.message}</p>
+            <p className="mt-4 whitespace-pre-line leading-8 text-ink/70">{storyText}</p>
 
             <LifeTimeline
               name={tribute.name}

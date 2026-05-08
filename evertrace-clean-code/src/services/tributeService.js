@@ -22,9 +22,12 @@ const TIMELINE_COLLECTION = "timeline";
 
 export async function createTribute({
   name,
+  birthDate = "",
+  passingDate = "",
   birthYear,
   passingYear,
   message,
+  story = "",
   creatorName,
   email,
   bannerId = "spring-path",
@@ -33,9 +36,12 @@ export async function createTribute({
 }) {
   const tributeRef = await addDoc(collection(db, TRIBUTES_COLLECTION), {
     name,
+    birthDate,
+    passingDate,
     birthYear,
     passingYear,
     message,
+    story,
     creatorName,
     email,
     bannerId,
@@ -208,6 +214,7 @@ export function subscribeToPhotos(tributeId, onChange, onError) {
     onError,
   );
 }
+
 export function subscribeToTimelineEvents(tributeId, onChange, onError) {
   const timelineQuery = query(
     collection(db, TRIBUTES_COLLECTION, tributeId, TIMELINE_COLLECTION),
@@ -242,7 +249,6 @@ export async function addTimelineEvent(tributeId, { year, title, description }) 
 
   return timelineRef.id;
 }
-
 
 export async function addTributeReaction(tributeId, reaction) {
   await updateDoc(doc(db, TRIBUTES_COLLECTION, tributeId), {
