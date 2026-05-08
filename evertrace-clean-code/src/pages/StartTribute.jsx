@@ -487,13 +487,12 @@ export default function StartTribute() {
                 <textarea
                   value={form.message}
                   onChange={(event) => updateField("message", event.target.value)}
-                  placeholder="Share their story or a few words..."
+                  placeholder="This appears in the banner. Keep it to four lines so it fits beautifully."
                   rows={4}
                   maxLength={280}
                   className="mt-2 w-full resize-none rounded-3xl border border-ink/10 bg-cream px-4 py-4 leading-7 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:bg-white focus:ring-4 focus:ring-rich-purple/10"
                   required
                 />
-                <span className="mt-2 block text-sm leading-6 text-ink/50">This appears in the banner. Keep it to four lines so it fits beautifully.</span>
               </label>
 
               <div className="-mt-2 rounded-2xl border border-rich-purple/10 bg-white px-4 py-3 shadow-sm">
