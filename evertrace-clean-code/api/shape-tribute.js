@@ -1,5 +1,6 @@
 const MAX_NOTES_LENGTH = 1200;
 const MAX_SUGGESTION_LENGTH = 280;
+const MAX_STORY_LENGTH = 1800;
 
 function limitHeroMessage(value) {
   return String(value || "")
@@ -8,6 +9,13 @@ function limitHeroMessage(value) {
     .slice(0, 4)
     .join("\n")
     .slice(0, MAX_SUGGESTION_LENGTH)
+    .trim();
+}
+
+function limitStory(value) {
+  return String(value || "")
+    .replace(/\r/g, "")
+    .slice(0, MAX_STORY_LENGTH)
     .trim();
 }
 
@@ -40,8 +48,9 @@ export default async function handler(request, response) {
     return;
   }
 
-  const { name = "their loved one", birthYear = "", passingYear = "", notes = "" } = request.body || {};
+  const { name = "their loved one", birthYear = "", passingYear = "", notes = "", mode = "intro", action = "shape" } = request.body || {};
   const trimmedNotes = String(notes).trim().slice(0, MAX_NOTES_LENGTH);
+  const isStoryMode = mode === "story";
 
   if (!trimmedNotes) {
     response.status(400).json({ error: "Add a few words first so we have something to shape." });
@@ -57,18 +66,23 @@ export default async function handler(request, response) {
       },
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-        max_output_tokens: 180,
+        max_output_tokens: isStoryMode ? 520 : 180,
         input: [
           {
             role: "system",
-            content:
-              "You help families shape brief memorial tribute copy. Write warmly, simply, and sincerely. Avoid cliches, religious assumptions, and overly formal language. Return only the finished tribute text, no labels.",
+            content: isStoryMode
+              ? "You help families write memorial tribute stories. Write warmly, calmly, and sincerely. Avoid cliches, religious assumptions, exaggeration, and overly formal language. Preserve the family member's voice. Return only the finished tribute text, no labels."
+              : "You help families shape brief memorial tribute copy. Write warmly, simply, and sincerely. Avoid cliches, religious assumptions, and overly formal language. Return only the finished tribute text, no labels.",
           },
           {
             role: "user",
             content: `Loved one: ${name || "their loved one"}\nLife dates: ${birthYear || "unknown"} - ${
               passingYear || "unknown"
-            }\nRaw words from family:\n${trimmedNotes}\n\nShape this into a short banner tribute that fits in four lines and no more than 280 characters. Preserve the family member's voice when possible.`,
+            }\nRequested revision: ${action}\nRaw words from family:\n${trimmedNotes}\n\n${
+              isStoryMode
+                ? "Shape this into a full tribute story for the main story section. Use 2 to 4 short paragraphs, keep it personal and editable, and stay under 1,800 characters."
+                : "Shape this into a short banner tribute that fits in four lines and no more than 280 characters. Preserve the family member's voice when possible."
+            }`,
           },
         ],
       }),
@@ -83,7 +97,7 @@ export default async function handler(request, response) {
       return;
     }
 
-    const suggestion = limitHeroMessage(extractResponseText(payload));
+    const suggestion = isStoryMode ? limitStory(extractResponseText(payload)) : limitHeroMessage(extractResponseText(payload));
 
     if (!suggestion) {
       response.status(502).json({ error: "The tribute helper did not return a suggestion." });

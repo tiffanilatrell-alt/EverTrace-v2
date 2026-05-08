@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Camera, Check, Star, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Check, Sparkles, Star, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -93,9 +93,10 @@ export default function StartTribute() {
   const [saving, setSaving] = useState(false);
   const [savingLabel, setSavingLabel] = useState("Creating...");
   const [error, setError] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState("");
-  const [aiSuggestion, setAiSuggestion] = useState("");
+  const [introAiLoading, setIntroAiLoading] = useState(false);
+  const [storyAiLoading, setStoryAiLoading] = useState(false);
+  const [introAiMessage, setIntroAiMessage] = useState("");
+  const [storyAiMessage, setStoryAiMessage] = useState("");
   const photosRef = useRef([]);
 
   useEffect(() => {
@@ -114,8 +115,11 @@ export default function StartTribute() {
 
   function updateField(field, value) {
     if (field === "message") {
-      setAiError("");
-      setAiSuggestion("");
+      setIntroAiMessage("");
+    }
+
+    if (field === "story") {
+      setStoryAiMessage("");
     }
 
     setForm((current) => ({
@@ -140,17 +144,22 @@ export default function StartTribute() {
     }));
   }
 
-  async function handleShapeTribute() {
-    const notes = form.message.trim();
+  async function handleAiHelp(field, action = "shape") {
+    const isIntro = field === "message";
+    const notes = (isIntro ? form.message : form.story).trim();
+    const setLoading = isIntro ? setIntroAiLoading : setStoryAiLoading;
+    const setMessage = isIntro ? setIntroAiMessage : setStoryAiMessage;
+    const emptyMessage = isIntro
+      ? "Add a few words or memories first, then we can help shape them."
+      : "Add a few memories, traits, or moments first, then we can help shape them.";
 
     if (!notes) {
-      setAiError("Add a few words or memories first, then we can help shape them.");
+      setMessage(emptyMessage);
       return;
     }
 
-    setAiLoading(true);
-    setAiError("");
-    setAiSuggestion("");
+    setLoading(true);
+    setMessage("");
 
     try {
       const response = await fetch("/api/shape-tribute", {
@@ -163,6 +172,8 @@ export default function StartTribute() {
           birthYear: form.birthYear,
           passingYear: form.passingYear,
           notes,
+          mode: isIntro ? "intro" : "story",
+          action,
         }),
       });
 
@@ -173,24 +184,19 @@ export default function StartTribute() {
         throw new Error(payload.error || "We could not shape this yet. Please try again in a moment.");
       }
 
-      const suggestion = limitHeroMessage(payload.suggestion || "");
+      const suggestion = isIntro ? limitHeroMessage(payload.suggestion || "") : payload.suggestion || "";
 
       if (!suggestion) {
         throw new Error("We could not create a suggestion from those words yet.");
       }
 
-      setAiSuggestion(suggestion);
+      updateField(field, suggestion);
+      setMessage(isIntro ? "A shaped intro has been placed above. You can edit it before publishing." : "A shaped story has been placed above. You can edit it before publishing.");
     } catch (err) {
-      setAiError(err.message || "We could not shape this yet. Please try again in a moment.");
+      setMessage(err.message || "We could not shape this yet. Please try again in a moment.");
     } finally {
-      setAiLoading(false);
+      setLoading(false);
     }
-  }
-
-  function applyAiSuggestion() {
-    if (!aiSuggestion) return;
-    updateField("message", aiSuggestion);
-    setAiSuggestion("");
   }
 
   function handlePhotoSelection(event) {
@@ -495,38 +501,37 @@ export default function StartTribute() {
                 />
               </label>
 
-              <div className="-mt-2 rounded-2xl border border-rich-purple/10 bg-white px-4 py-3 shadow-sm">
+              <div className="-mt-2 rounded-2xl border border-rich-purple/10 bg-white/95 px-4 py-3 shadow-sm">
                 <p className="text-sm font-semibold text-ink">Need help with the banner intro?</p>
                 <p className="mt-1 text-sm leading-6 text-ink/60">
-                  Add a few rough words above, and we can shape them into a short intro you can edit.
+                  Add a few rough words or memories, and we'll shape them into a short intro you can edit.
                 </p>
-                <button
-                  type="button"
-                  onClick={handleShapeTribute}
-                  disabled={aiLoading}
-                  className="mt-3 inline-flex min-h-10 items-center justify-center rounded-full border border-rich-purple/25 bg-light-purple/45 px-4 text-sm font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  {aiLoading ? "Shaping..." : "Shape Banner Intro"}
-                </button>
-                {aiError && <p className="mt-3 text-sm leading-6 text-red-700">{aiError}</p>}
-                {aiSuggestion && (
-                  <div className="mt-4 rounded-2xl border border-rich-purple/10 bg-light-purple/35 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-deep-purple/70">
-                      Suggested wording
-                    </p>
-                    <p className="mt-2 whitespace-pre-line text-sm leading-6 text-ink/75">{aiSuggestion}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleAiHelp("message")}
+                    disabled={introAiLoading}
+                    className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-rich-purple/30 bg-white px-4 text-sm font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    <Sparkles size={15} /> {introAiLoading ? "Shaping..." : "Shape Banner Intro"}
+                  </button>
+                  {["Make it shorter", "Make it warmer", "Make it more polished"].map((action) => (
                     <button
+                      key={action}
                       type="button"
-                      onClick={applyAiSuggestion}
-                      className="mt-3 inline-flex min-h-10 items-center justify-center rounded-full bg-deep-purple px-4 text-sm font-semibold text-white transition hover:bg-rich-purple"
+                      onClick={() => handleAiHelp("message", action)}
+                      disabled={introAiLoading}
+                      className="inline-flex min-h-10 items-center justify-center rounded-full border border-rich-purple/15 bg-light-purple/35 px-3 text-xs font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
                     >
-                      Use This Version
+                      {action}
                     </button>
-                  </div>
-                )}
+                  ))}
+                </div>
+                {introAiMessage && <p className="mt-3 text-sm leading-6 text-deep-purple/75">{introAiMessage}</p>}
               </div>
 
-              <label className="block rounded-3xl border-2 border-rich-purple/20 bg-light-purple/30 p-5 shadow-sm">
+              <div className="rounded-3xl border-2 border-rich-purple/20 bg-light-purple/30 p-5 shadow-sm">
+                <label className="block">
                 <span className="text-sm font-semibold text-ink/72">Full Tribute Story</span>
                 <span className="mt-1 block text-sm leading-6 text-ink/55">
                   This is the heart of the tribute and appears in the main story section. Add the fuller version of their life, personality, and what you want people to remember.
@@ -539,7 +544,37 @@ export default function StartTribute() {
                   className="mt-3 w-full resize-none rounded-3xl border border-ink/10 bg-white px-4 py-4 leading-7 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
                   required
                 />
-              </label>
+                </label>
+
+                <div className="mt-4 rounded-2xl border border-rich-purple/10 bg-white/90 px-4 py-4 shadow-sm">
+                  <p className="text-sm font-semibold text-ink">Need help telling the story?</p>
+                  <p className="mt-1 text-sm leading-6 text-ink/60">
+                    Start with a few memories, traits, or moments. We'll help turn them into a tribute you can edit.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleAiHelp("story")}
+                      disabled={storyAiLoading}
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-rich-purple/30 bg-white px-4 text-sm font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      <Sparkles size={15} /> {storyAiLoading ? "Writing..." : "Help Write Tribute Story"}
+                    </button>
+                    {["Start from memories", "Make it more heartfelt", "Make it simpler"].map((action) => (
+                      <button
+                        key={action}
+                        type="button"
+                        onClick={() => handleAiHelp("story", action)}
+                        disabled={storyAiLoading}
+                        className="inline-flex min-h-10 items-center justify-center rounded-full border border-rich-purple/15 bg-light-purple/35 px-3 text-xs font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        {action}
+                      </button>
+                    ))}
+                  </div>
+                  {storyAiMessage && <p className="mt-3 text-sm leading-6 text-deep-purple/75">{storyAiMessage}</p>}
+                </div>
+              </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <TextField
