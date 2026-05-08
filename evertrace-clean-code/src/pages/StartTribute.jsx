@@ -49,6 +49,9 @@ export default function StartTribute() {
   const [saving, setSaving] = useState(false);
   const [savingLabel, setSavingLabel] = useState("Creating...");
   const [error, setError] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [aiSuggestion, setAiSuggestion] = useState("");
   const photosRef = useRef([]);
 
   useEffect(() => {
@@ -66,10 +69,68 @@ export default function StartTribute() {
   }, [step]);
 
   function updateField(field, value) {
+    if (field === "message") {
+      setAiError("");
+      setAiSuggestion("");
+    }
+
     setForm((current) => ({
       ...current,
       [field]: field === "message" ? limitHeroMessage(value) : value,
     }));
+  }
+
+  async function handleShapeTribute() {
+    const notes = form.message.trim();
+
+    if (!notes) {
+      setAiError("Add a few words or memories first, then we can help shape them.");
+      return;
+    }
+
+    setAiLoading(true);
+    setAiError("");
+    setAiSuggestion("");
+
+    try {
+      const response = await fetch("/api/shape-tribute", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          birthYear: form.birthYear,
+          passingYear: form.passingYear,
+          notes,
+        }),
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      const payload = contentType.includes("application/json") ? await response.json() : {};
+
+      if (!response.ok) {
+        throw new Error(payload.error || "We could not shape this yet. Please try again in a moment.");
+      }
+
+      const suggestion = limitHeroMessage(payload.suggestion || "");
+
+      if (!suggestion) {
+        throw new Error("We could not create a suggestion from those words yet.");
+      }
+
+      setAiSuggestion(suggestion);
+    } catch (err) {
+      setAiError(err.message || "We could not shape this yet. Please try again in a moment.");
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
+  function applyAiSuggestion() {
+    if (!aiSuggestion) return;
+    updateField("message", aiSuggestion);
+    setAiSuggestion("");
   }
 
   function handlePhotoSelection(event) {
@@ -221,12 +282,15 @@ export default function StartTribute() {
               <p className="mt-3 max-w-xl text-sm leading-6 text-ink/62">
                 Choose a few favorite moments for the gallery. After you upload them, tap the photo you want to use as the primary image at the top of the tribute.
               </p>
+              <div className="mt-5 rounded-2xl border border-rich-purple/10 bg-light-purple/35 px-4 py-3 text-sm leading-6 text-ink/68">
+                Start with one clear portrait if you have it. You can add up to 8 photos now and caption each one with a short memory.
+              </div>
 
-              <label className="mt-6 grid cursor-pointer place-items-center rounded-3xl border border-dashed border-ink/20 bg-cream px-5 py-7 text-center transition hover:bg-stone sm:py-8">
-                <Camera className="text-deep-purple" size={28} />
-                <span className="mt-3 font-semibold text-ink">{photos.length ? "Add more photos to the gallery" : "Tap to add gallery photos"}</span>
-                <span className="mt-1 max-w-md text-sm leading-6 text-ink/55">
-                  Start with one clear portrait if you have it. You can add up to 8 photos now and caption each one with a short memory. You can choose one as the primary photo after upload.
+              <label className="mt-7 grid cursor-pointer place-items-center rounded-[2rem] border border-dashed border-ink/20 bg-cream px-5 py-12 text-center transition hover:bg-stone">
+                <Camera className="text-deep-purple" size={34} />
+                <span className="mt-4 font-semibold text-ink">{photos.length ? "Add more photos to the gallery" : "Tap to add gallery photos"}</span>
+                <span className="mt-2 max-w-sm text-sm leading-6 text-ink/55">
+                  You can choose one as the primary photo after upload. Up to 8 photos for now.
                 </span>
                 <input
                   type="file"
@@ -336,16 +400,17 @@ export default function StartTribute() {
               </div>
 
               <label className="block">
-                <span className="text-sm font-semibold text-ink/72">Tribute Story</span>
+                <span className="text-sm font-semibold text-ink/72">Tribute intro</span>
                 <textarea
                   value={form.message}
                   onChange={(event) => updateField("message", event.target.value)}
-                  placeholder="This appears in the banner. Keep it to four lines so it fits beautifully."
+                  placeholder="Share their story or a few words..."
                   rows={4}
                   maxLength={280}
                   className="mt-2 w-full resize-none rounded-3xl border border-ink/10 bg-cream px-4 py-4 leading-7 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:bg-white focus:ring-4 focus:ring-rich-purple/10"
                   required
                 />
+                <span className="mt-2 block text-sm leading-6 text-ink/50">This appears in the banner. Keep it to four lines so it fits beautifully.</span>
               </label>
 
               <div className="-mt-2 rounded-2xl border border-rich-purple/10 bg-white px-4 py-3 shadow-sm">
@@ -355,11 +420,28 @@ export default function StartTribute() {
                 </p>
                 <button
                   type="button"
-                  disabled
-                  className="mt-3 inline-flex min-h-10 items-center justify-center rounded-full border border-rich-purple/25 bg-light-purple/45 px-4 text-sm font-semibold text-deep-purple"
+                  onClick={handleShapeTribute}
+                  disabled={aiLoading || !form.message.trim()}
+                  className="mt-3 inline-flex min-h-10 items-center justify-center rounded-full border border-rich-purple/25 bg-light-purple/45 px-4 text-sm font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  Help Me Shape This
+                  {aiLoading ? "Shaping..." : "Help Me Shape This"}
                 </button>
+                {aiError && <p className="mt-3 text-sm leading-6 text-red-700">{aiError}</p>}
+                {aiSuggestion && (
+                  <div className="mt-4 rounded-2xl border border-rich-purple/10 bg-light-purple/35 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-deep-purple/70">
+                      Suggested wording
+                    </p>
+                    <p className="mt-2 whitespace-pre-line text-sm leading-6 text-ink/75">{aiSuggestion}</p>
+                    <button
+                      type="button"
+                      onClick={applyAiSuggestion}
+                      className="mt-3 inline-flex min-h-10 items-center justify-center rounded-full bg-deep-purple px-4 text-sm font-semibold text-white transition hover:bg-rich-purple"
+                    >
+                      Use This Version
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="-mt-2">
@@ -497,30 +579,20 @@ function TributePreview({ name, years, message, primaryPhoto, banner, compact = 
     <div className={compact ? "" : "rounded-[2rem] border border-rich-purple/10 bg-white p-4 shadow-soft"}>
       {!compact && <p className="eyebrow px-2 pb-3">Preview</p>}
       <div className="overflow-hidden rounded-[1.5rem] bg-deep-purple shadow-soft">
-        <div className={`relative overflow-hidden ${compact ? "min-h-[320px]" : "min-h-[430px]"}`}>
-          <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover object-center" />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(45,27,78,0.75),rgba(45,27,78,0.55))]" />
-          <div className={`relative flex items-center p-5 text-white ${compact ? "min-h-[320px]" : "min-h-[430px]"}`}>
-            <div className="grid w-full gap-4 sm:grid-cols-[7.5rem_1fr] sm:items-end">
-              <div className="mx-auto w-28 overflow-hidden rounded-[1.25rem] border border-white/25 bg-white/12 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full">
-                {primaryPhoto ? (
-                  <img src={primaryPhoto.previewUrl} alt="Primary portrait preview" className="aspect-[4/5] w-full rounded-[0.9rem] object-cover object-[center_30%]" />
-                ) : (
-                  <div className="grid aspect-[4/5] w-full place-items-center rounded-[0.9rem] bg-white/16 text-center text-xs font-semibold leading-5 text-white/70">
-                    Primary photo
-                  </div>
-                )}
+        <div className={`relative ${compact ? "min-h-[260px]" : "min-h-[420px]"}`}>
+          <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-deep-purple/90 via-deep-purple/35 to-deep-purple/10" />
+          <div className={`relative flex flex-col justify-end p-5 text-white ${compact ? "min-h-[260px]" : "min-h-[420px]"}`}>
+            <p className="eyebrow-light">In Loving Memory</p>
+            <h2 className={`${compact ? "text-2xl" : "text-3xl"} mt-2 font-semibold tracking-tight`}>{name}</h2>
+            <p className="mt-1 text-sm text-white/75">{years || "Years can be added later"}</p>
+            <p className="mt-4 line-clamp-4 text-sm leading-6 text-white/82">{message}</p>
+            {primaryPhoto && (
+              <div className="mt-5 flex items-center gap-3 rounded-2xl bg-white/12 p-3 backdrop-blur">
+                <img src={primaryPhoto.previewUrl} alt="Primary portrait preview" className="size-12 rounded-full object-cover" />
+                <p className="text-xs font-semibold text-white/75">Primary photo selected</p>
               </div>
-
-              <div className="text-center sm:text-left">
-                <p className="eyebrow-light">In Loving Memory</p>
-                <h2 className={`${compact ? "text-3xl" : "text-4xl"} mt-3 font-semibold tracking-tight`}>{name}</h2>
-                <p className="mt-2 text-sm font-semibold text-white/82">{years || "Years can be added later"}</p>
-                <div className="mt-5 rounded-[1.5rem] border border-white/12 bg-deep-purple/18 p-4 shadow-soft backdrop-blur-sm">
-                  <p className="line-clamp-4 text-sm leading-6 text-white/88">{message}</p>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
