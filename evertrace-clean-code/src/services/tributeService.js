@@ -10,6 +10,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
@@ -19,6 +20,24 @@ const TRIBUTES_COLLECTION = "tributes";
 const MEMORIES_COLLECTION = "memories";
 const PHOTOS_COLLECTION = "photos";
 const TIMELINE_COLLECTION = "timeline";
+const ACCESS_COLLECTION = "tributeAccess";
+
+function createManageToken() {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID().replace(/-/g, "");
+  }
+
+  return `${Date.now()}${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+}
+
+async function hashManageToken(token) {
+  const encodedToken = new TextEncoder().encode(token);
+  const digest = await crypto.subtle.digest("SHA-256", encodedToken);
+
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 export async function createTribute({
   name,
@@ -34,6 +53,8 @@ export async function createTribute({
   bannerUrl = "/home-hero.jpg",
   visibility = "public",
 }) {
+  const manageToken = createManageToken();
+  const manageTokenHash = await hashManageToken(manageToken);
   const tributeRef = await addDoc(collection(db, TRIBUTES_COLLECTION), {
     name,
     birthDate,
@@ -47,6 +68,7 @@ export async function createTribute({
     bannerId,
     bannerUrl,
     visibility,
+    updatedAt: serverTimestamp(),
     primaryPhotoUrl: "",
     photoCount: 0,
     reactionCounts: {
@@ -57,7 +79,19 @@ export async function createTribute({
     createdAt: serverTimestamp(),
   });
 
-  return tributeRef.id;
+  await setDoc(doc(db, ACCESS_COLLECTION, tributeRef.id), {
+    tributeId: tributeRef.id,
+    manageTokenHash,
+    creatorEmail: email,
+    creatorName,
+    createdAt: serverTimestamp(),
+    lastAccessedAt: serverTimestamp(),
+  });
+
+  return {
+    id: tributeRef.id,
+    manageToken,
+  };
 }
 
 export async function uploadTributePhotos(tributeId, photos, primaryPhotoId) {
@@ -122,6 +156,29 @@ export async function getTribute(tributeId) {
     id: tributeSnap.id,
     ...tributeSnap.data(),
   };
+}
+
+export async function getManagedTribute(tributeId, manageToken) {
+  if (!manageToken) return null;
+
+  const accessSnap = await getDoc(doc(db, ACCESS_COLLECTION, tributeId));
+  const manageTokenHash = await hashManageToken(manageToken);
+
+  if (!accessSnap.exists() || accessSnap.data().manageTokenHash !== manageTokenHash) {
+    return null;
+  }
+
+  const tribute = await getTribute(tributeId);
+
+  if (!tribute) {
+    return null;
+  }
+
+  await updateDoc(doc(db, ACCESS_COLLECTION, tributeId), {
+    lastAccessedAt: serverTimestamp(),
+  });
+
+  return tribute;
 }
 
 export function subscribeToTribute(tributeId, onChange, onError) {
@@ -273,4 +330,5 @@ export const firestoreCollections = {
   memories: `${TRIBUTES_COLLECTION}/{tributeId}/${MEMORIES_COLLECTION}`,
   photos: `${TRIBUTES_COLLECTION}/{tributeId}/${PHOTOS_COLLECTION}`,
   timeline: `${TRIBUTES_COLLECTION}/{tributeId}/${TIMELINE_COLLECTION}`,
+  access: ACCESS_COLLECTION,
 };

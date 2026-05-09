@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Camera, Check, Sparkles, Star, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Check, Sparkles, Star, Undo2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,22 @@ const initialForm = {
   email: "",
   bannerId: defaultBanner.id,
 };
+
+const AI_USE_LIMIT = 5;
+const AI_USE_STORAGE_KEY = "evertrace-tribute-builder-ai-uses";
+const AI_SESSION_STORAGE_KEY = "evertrace-tribute-builder-ai-session";
+
+function getOrCreateAiSessionId() {
+  if (typeof window === "undefined") return "";
+
+  const existingSessionId = window.localStorage.getItem(AI_SESSION_STORAGE_KEY);
+  if (existingSessionId) return existingSessionId;
+
+  const nextSessionId = `tribute_${crypto.randomUUID()}`;
+  window.localStorage.setItem(AI_SESSION_STORAGE_KEY, nextSessionId);
+
+  return nextSessionId;
+}
 
 function limitHeroMessage(value) {
   return value.replace(/\r/g, "").split("\n").slice(0, 4).join("\n").slice(0, 280);
@@ -97,6 +113,15 @@ export default function StartTribute() {
   const [storyAiLoading, setStoryAiLoading] = useState(false);
   const [introAiMessage, setIntroAiMessage] = useState("");
   const [storyAiMessage, setStoryAiMessage] = useState("");
+  const [aiUseCount, setAiUseCount] = useState(() => {
+    if (typeof window === "undefined") return 0;
+    return Number(window.sessionStorage.getItem(AI_USE_STORAGE_KEY) || 0);
+  });
+  const [aiSessionId] = useState(getOrCreateAiSessionId);
+  const [aiHistory, setAiHistory] = useState({
+    message: [],
+    story: [],
+  });
   const photosRef = useRef([]);
 
   useEffect(() => {
@@ -149,12 +174,18 @@ export default function StartTribute() {
     const notes = (isIntro ? form.message : form.story).trim();
     const setLoading = isIntro ? setIntroAiLoading : setStoryAiLoading;
     const setMessage = isIntro ? setIntroAiMessage : setStoryAiMessage;
+    const aiUsesRemaining = Math.max(AI_USE_LIMIT - aiUseCount, 0);
     const emptyMessage = isIntro
       ? "Add a few words or memories first, then we can help shape them."
       : "Add a few memories, traits, or moments first, then we can help shape them.";
 
     if (!notes) {
       setMessage(emptyMessage);
+      return;
+    }
+
+    if (aiUsesRemaining <= 0) {
+      setMessage("You have used the AI writing helper 5 times for this tribute. You can keep editing the text by hand.");
       return;
     }
 
@@ -174,6 +205,7 @@ export default function StartTribute() {
           notes,
           mode: isIntro ? "intro" : "story",
           action,
+          sessionId: aiSessionId,
         }),
       });
 
@@ -181,6 +213,13 @@ export default function StartTribute() {
       const payload = contentType.includes("application/json") ? await response.json() : {};
 
       if (!response.ok) {
+        if (typeof payload.usesRemaining === "number") {
+          const nextUseCount = AI_USE_LIMIT - payload.usesRemaining;
+          setAiUseCount(nextUseCount);
+          if (typeof window !== "undefined") {
+            window.sessionStorage.setItem(AI_USE_STORAGE_KEY, String(nextUseCount));
+          }
+        }
         throw new Error(payload.error || "We could not shape this yet. Please try again in a moment.");
       }
 
@@ -190,12 +229,42 @@ export default function StartTribute() {
         throw new Error("We could not create a suggestion from those words yet.");
       }
 
+      setAiHistory((current) => ({
+        ...current,
+        [field]: [...current[field], isIntro ? form.message : form.story].slice(-5),
+      }));
+      const nextUseCount =
+        typeof payload.usesRemaining === "number" ? AI_USE_LIMIT - payload.usesRemaining : aiUseCount + 1;
+      setAiUseCount(nextUseCount);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(AI_USE_STORAGE_KEY, String(nextUseCount));
+      }
       updateField(field, suggestion);
       setMessage(isIntro ? "A shaped intro has been placed above. You can edit it before publishing." : "A shaped story has been placed above. You can edit it before publishing.");
     } catch (err) {
       setMessage(err.message || "We could not shape this yet. Please try again in a moment.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  function undoAiSuggestion(field) {
+    const isIntro = field === "message";
+    const previousValues = aiHistory[field];
+    const previousValue = previousValues[previousValues.length - 1];
+
+    if (previousValue === undefined) return;
+
+    setAiHistory((current) => ({
+      ...current,
+      [field]: current[field].slice(0, -1),
+    }));
+    updateField(field, previousValue);
+
+    if (isIntro) {
+      setIntroAiMessage("Restored the previous banner intro.");
+    } else {
+      setStoryAiMessage("Restored the previous tribute story.");
     }
   }
 
@@ -306,7 +375,7 @@ export default function StartTribute() {
 
     try {
       const cleanedForm = trimFormValues(form);
-      const tributeId = await createTribute({
+      const tribute = await createTribute({
         ...cleanedForm,
         bannerUrl: getBannerById(cleanedForm.bannerId).imageUrl,
         visibility: "public",
@@ -314,10 +383,10 @@ export default function StartTribute() {
 
       if (photos.length) {
         setSavingLabel("Uploading photos...");
-        await uploadTributePhotos(tributeId, photos, primaryPhotoId || photos[0].id);
+        await uploadTributePhotos(tribute.id, photos, primaryPhotoId || photos[0].id);
       }
 
-      navigate(`/published/${tributeId}`);
+      navigate(`/published/${tribute.id}?manageToken=${tribute.manageToken}`);
     } catch (err) {
       setError("We could not create the tribute yet. Please check your Firebase setup and storage rules, then try again.");
       setSaving(false);
@@ -330,6 +399,8 @@ export default function StartTribute() {
   const previewYears = [form.birthYear, form.passingYear].filter(Boolean).join(" - ");
   const previewName = form.name.trim() || "Their Name";
   const previewMessage = form.message.trim() || "A few loving words will appear here as the tribute begins to take shape.";
+  const aiUsesRemaining = Math.max(AI_USE_LIMIT - aiUseCount, 0);
+  const aiLimitReached = aiUsesRemaining <= 0;
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-7xl flex-col justify-center px-4 py-8 sm:px-6">
@@ -506,21 +577,33 @@ export default function StartTribute() {
                 <p className="mt-1 text-sm leading-6 text-ink/60">
                   Add a few rough words or memories, and we'll shape them into a short intro you can edit.
                 </p>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-deep-purple/55">
+                  {aiUsesRemaining} of {AI_USE_LIMIT} AI uses left
+                </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => handleAiHelp("message")}
-                    disabled={introAiLoading}
+                    disabled={introAiLoading || aiLimitReached}
                     className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-rich-purple/30 bg-white px-4 text-sm font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     <Sparkles size={15} /> {introAiLoading ? "Shaping..." : "Shape Banner Intro"}
                   </button>
+                  {aiHistory.message.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => undoAiSuggestion("message")}
+                      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-rich-purple/15 bg-white px-3 text-xs font-semibold text-deep-purple transition hover:bg-light-purple"
+                    >
+                      <Undo2 size={14} /> Back
+                    </button>
+                  )}
                   {["Make it shorter", "Make it warmer", "Make it more polished"].map((action) => (
                     <button
                       key={action}
                       type="button"
                       onClick={() => handleAiHelp("message", action)}
-                      disabled={introAiLoading}
+                      disabled={introAiLoading || aiLimitReached}
                       className="inline-flex min-h-10 items-center justify-center rounded-full border border-rich-purple/15 bg-light-purple/35 px-3 text-xs font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
                     >
                       {action}
@@ -551,21 +634,33 @@ export default function StartTribute() {
                   <p className="mt-1 text-sm leading-6 text-ink/60">
                     Start with a few memories, traits, or moments. We'll help turn them into a tribute you can edit.
                   </p>
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-deep-purple/55">
+                    {aiUsesRemaining} of {AI_USE_LIMIT} AI uses left
+                  </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => handleAiHelp("story")}
-                      disabled={storyAiLoading}
+                      disabled={storyAiLoading || aiLimitReached}
                       className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-rich-purple/30 bg-white px-4 text-sm font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
                     >
                       <Sparkles size={15} /> {storyAiLoading ? "Writing..." : "Help Write Tribute Story"}
                     </button>
+                    {aiHistory.story.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => undoAiSuggestion("story")}
+                        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-rich-purple/15 bg-white px-3 text-xs font-semibold text-deep-purple transition hover:bg-light-purple"
+                      >
+                        <Undo2 size={14} /> Back
+                      </button>
+                    )}
                     {["Start from memories", "Make it more heartfelt", "Make it simpler"].map((action) => (
                       <button
                         key={action}
                         type="button"
                         onClick={() => handleAiHelp("story", action)}
-                        disabled={storyAiLoading}
+                        disabled={storyAiLoading || aiLimitReached}
                         className="inline-flex min-h-10 items-center justify-center rounded-full border border-rich-purple/15 bg-light-purple/35 px-3 text-xs font-semibold text-deep-purple transition hover:bg-light-purple disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         {action}

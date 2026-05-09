@@ -1,14 +1,19 @@
 import { Check, Copy, ExternalLink, QrCode, Share2 } from "lucide-react";
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 
 const shareText = "Invite family and friends to add their memories.";
 
 export default function PublishSuccess() {
   const { tributeId } = useParams();
+  const [searchParams] = useSearchParams();
   const [copied, setCopied] = useState(false);
+  const [manageCopied, setManageCopied] = useState(false);
+  const manageToken = searchParams.get("manageToken") || "";
   const tributePath = `/tribute/${tributeId}`;
+  const managePath = manageToken ? `/manage/${tributeId}?token=${manageToken}` : "";
   const tributeUrl = typeof window === "undefined" ? tributePath : `${window.location.origin}${tributePath}`;
+  const manageUrl = managePath && typeof window !== "undefined" ? `${window.location.origin}${managePath}` : managePath;
 
   function showCopied() {
     setCopied(true);
@@ -21,6 +26,18 @@ export default function PublishSuccess() {
       showCopied();
     } catch (err) {
       setCopied(false);
+    }
+  }
+
+  async function copyManageLink() {
+    if (!manageUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(manageUrl);
+      setManageCopied(true);
+      window.setTimeout(() => setManageCopied(false), 2400);
+    } catch (err) {
+      setManageCopied(false);
     }
   }
 
@@ -82,6 +99,32 @@ export default function PublishSuccess() {
           <ExternalLink size={18} /> View Tribute
         </Link>
 
+
+        {manageUrl && (
+          <div className="mt-7 rounded-3xl border border-rich-purple/15 bg-light-purple/30 p-5">
+            <p className="text-sm font-semibold text-ink">Save your private creator link</p>
+            <p className="mt-2 leading-7 text-ink/65">
+              This private link lets you return to this tribute later. Keep it somewhere safe and do not share it publicly.
+            </p>
+            <p className="mt-3 break-all rounded-2xl bg-white px-4 py-3 text-sm leading-6 text-ink/70">{manageUrl}</p>
+            {manageCopied && <p className="mt-3 text-sm font-semibold text-deep-purple">Private creator link copied.</p>}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={copyManageLink}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-rich-purple/35 bg-white px-5 font-semibold text-ink transition hover:bg-stone"
+              >
+                <Copy size={18} /> Copy Private Link
+              </button>
+              <Link
+                to={managePath}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-rich-purple/35 bg-white px-5 font-semibold text-ink transition hover:bg-stone"
+              >
+                <ExternalLink size={18} /> Open Creator Access
+              </Link>
+            </div>
+          </div>
+        )}
         <div className="mt-7 rounded-3xl border border-ink/10 p-5">
           <QrCode className="text-deep-purple" size={24} />
           <p className="mt-3 font-semibold">Preserve it later</p>

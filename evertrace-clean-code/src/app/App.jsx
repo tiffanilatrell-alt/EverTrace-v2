@@ -5,6 +5,7 @@ import About from "../pages/About";
 import ExampleTribute from "../pages/ExampleTribute";
 import FAQ from "../pages/FAQ";
 import Home from "../pages/Home";
+import ManageTribute from "../pages/ManageTribute";
 import PlaqueInfo from "../pages/PlaqueInfo";
 import PublishSuccess from "../pages/PublishSuccess";
 import Resources from "../pages/Resources";
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="resources" element={<Resources />} />
           <Route path="start" element={<StartTribute />} />
           <Route path="published/:tributeId" element={<PublishSuccess />} />
+          <Route path="manage/:tributeId" element={<ManageTribute />} />
           <Route path="tribute/:tributeId" element={<TributePage />} />
           <Route path="plaques/:tributeId" element={<PlaqueInfo />} />
           <Route path="example" element={<ExampleTribute />} />
