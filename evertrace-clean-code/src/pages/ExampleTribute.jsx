@@ -2,7 +2,6 @@ import { Copy, Mail, MessageCircle, QrCode, Share2, Sparkles, X } from "lucide-r
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { getBannerById } from "../data/bannerPresets";
-import LifeTimeline from "../shared/LifeTimeline";
 import PhotoGallery from "../shared/PhotoGallery";
 
 const reactions = [
@@ -33,23 +32,6 @@ const memories = [
 ];
 
 const favorites = ["Garden roses", "Sunday dinners", "Old hymns", "Handwritten notes"];
-
-const sampleTimelineEvents = [
-  {
-    id: "family-home",
-    year: "1978",
-    yearNumber: 1978,
-    title: "Built a home full of welcome",
-    description: "Jean created the kind of home where people felt expected, fed, and remembered.",
-  },
-  {
-    id: "motherhood",
-    year: "1984",
-    yearNumber: 1984,
-    title: "A season of motherhood and care",
-    description: "Her steady love shaped the people who knew her most closely.",
-  },
-];
 
 const samplePhotos = [
   {
@@ -87,9 +69,6 @@ export default function ExampleTribute() {
   const [tributeReactions, setTributeReactions] = useState({ candle: 42, love: 86, flowers: 31 });
   const [sampleMemories, setSampleMemories] = useState(memories);
   const [galleryPhotos, setGalleryPhotos] = useState(samplePhotos);
-  const [timelineEvents, setTimelineEvents] = useState(sampleTimelineEvents);
-  const [timelineForm, setTimelineForm] = useState({ year: "", title: "", description: "" });
-  const [isTimelineFormOpen, setIsTimelineFormOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   function addTributeReaction(reactionKey) {
@@ -133,44 +112,23 @@ export default function ExampleTribute() {
     );
   }
 
-  function addTimelineEvent(event) {
-    event.preventDefault();
-    setTimelineEvents((currentEvents) => [
-      ...currentEvents,
-      {
-        id: `${timelineForm.year}-${timelineForm.title}`,
-        year: timelineForm.year,
-        yearNumber: Number(timelineForm.year) || 0,
-        title: timelineForm.title,
-        description: timelineForm.description,
-      },
-    ]);
-    setTimelineForm({ year: "", title: "", description: "" });
-    setIsTimelineFormOpen(false);
-  }
-
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <section className="overflow-hidden rounded-[2rem] border border-ink/10 bg-white shadow-soft">
-        <div className="relative min-h-[430px] overflow-hidden bg-deep-purple p-5 text-white sm:p-7">
+        <div className="relative min-h-[420px] overflow-hidden bg-deep-purple p-5 text-white sm:p-7">
           <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover object-center" />
           <div className="absolute inset-0 bg-[linear-gradient(rgba(45,27,78,0.75),rgba(45,27,78,0.55))]" />
           <p className="eyebrow-light absolute right-6 top-6 z-10 sm:right-8 sm:top-8">Example Tribute</p>
-          <div className="relative flex min-h-[386px] items-center">
-            <div className="grid w-full gap-5 sm:grid-cols-[14rem_1fr] sm:items-end lg:grid-cols-[16rem_1fr]">
-              <div className="mx-auto w-44 overflow-hidden rounded-[1.5rem] border border-white/25 bg-white/12 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full">
-                <img src="/example-primary.png" alt="Jean E. White" className="aspect-[4/5] w-full rounded-[1.1rem] object-cover object-[center_30%]" />
-              </div>
-
-              <div className="text-center sm:text-left">
-                <h1 className="text-5xl font-semibold tracking-tight sm:text-6xl">Jean E. White</h1>
-                <p className="mt-3 text-lg font-semibold text-white/82">1950 - 2005</p>
-                <div className="mt-6 rounded-[2rem] border border-white/12 bg-deep-purple/18 p-5 shadow-soft backdrop-blur-sm sm:p-6">
-                  <p className="line-clamp-4 max-w-2xl text-base leading-7 text-white/88 sm:text-lg sm:leading-8">
-                    To know Jean was to feel remembered. She had a quiet confidence and a thoughtful way of speaking, and somehow she always made you believe in yourself. She was my mom. ~Tiffani Latrell
-                  </p>
-                </div>
-              </div>
+          <div className="relative flex min-h-[376px] flex-col justify-end">
+            <p className="eyebrow-light">In Loving Memory</p>
+            <h1 className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">Jean E. White</h1>
+            <p className="mt-3 text-lg text-white/80">1950 - 2005</p>
+            <p className="mt-6 line-clamp-4 max-w-2xl text-lg leading-8 text-white/85">
+              To know Jean was to feel remembered. She had a quiet confidence and a thoughtful way of speaking, and somehow she always made you believe in yourself. She was my mom. ~Tiffani Latrell
+            </p>
+            <div className="mt-6 flex items-center gap-3 rounded-2xl bg-white/14 p-3 backdrop-blur">
+              <img src="/example-primary.png" alt="Jean E. White" className="size-12 rounded-full object-cover" />
+              <p className="text-xs font-semibold text-white/78">Primary photo selected</p>
             </div>
           </div>
         </div>
@@ -215,19 +173,6 @@ export default function ExampleTribute() {
             <p className="mt-4 leading-8 text-ink/70">
               She had a way of making everyone feel expected, as if the table had been waiting for them all along. This tribute gathers the stories, phrases, and everyday details that still carry her presence.
             </p>
-
-            <LifeTimeline
-              name="Jean E. White"
-              birthYear="1950"
-              passingYear="2005"
-              events={timelineEvents}
-              form={timelineForm}
-              onFormChange={setTimelineForm}
-              onSubmit={addTimelineEvent}
-              onCancel={() => setIsTimelineFormOpen(false)}
-              isAdding={isTimelineFormOpen}
-              onStartAdding={() => setIsTimelineFormOpen(true)}
-            />
 
             <PhotoGallery photos={galleryPhotos} onReact={addPhotoReaction} />
 

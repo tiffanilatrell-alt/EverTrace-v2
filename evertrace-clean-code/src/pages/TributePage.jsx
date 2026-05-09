@@ -304,34 +304,21 @@ export default function TributePage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <section className="overflow-hidden rounded-[2rem] border border-ink/10 bg-white shadow-soft">
-        <div className={`${tribute.primaryPhotoUrl ? "min-h-[430px]" : "min-h-[340px]"} relative overflow-hidden bg-deep-purple p-5 text-white sm:p-7`}>
+        <div className="relative min-h-[420px] overflow-hidden bg-deep-purple p-5 text-white sm:p-7">
           <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover object-center" />
           <div className="absolute inset-0 bg-[linear-gradient(rgba(45,27,78,0.75),rgba(45,27,78,0.55))]" />
-          {tribute.primaryPhotoUrl ? (
-            <div className="relative flex min-h-[386px] items-center">
-              <div className="grid w-full gap-5 sm:grid-cols-[14rem_1fr] sm:items-end lg:grid-cols-[16rem_1fr]">
-                <div className="mx-auto w-44 overflow-hidden rounded-[1.5rem] border border-white/25 bg-white/12 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full">
-                  <img src={tribute.primaryPhotoUrl} alt={tribute.name} className="aspect-[4/5] w-full rounded-[1.1rem] object-cover object-[center_30%]" />
-                </div>
-
-                <div className="text-center sm:text-left">
-                    <p className="eyebrow-light">In Loving Memory</p>
-                    <h1 className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">{tribute.name}</h1>
-                    {years && <p className="mt-3 text-lg font-semibold text-white/82">{years}</p>}
-                    <div className="mt-6 rounded-[2rem] border border-white/12 bg-deep-purple/18 p-5 shadow-soft backdrop-blur-sm sm:p-6">
-                      <p className="line-clamp-4 max-w-2xl text-base leading-7 text-white/88 sm:text-lg sm:leading-8">{tribute.message}</p>
-                    </div>
-                </div>
+          <div className="relative flex min-h-[376px] flex-col justify-end">
+            <p className="eyebrow-light">In Loving Memory</p>
+            <h1 className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">{tribute.name}</h1>
+            {years && <p className="mt-3 text-lg text-white/80">{years}</p>}
+            <p className="mt-6 line-clamp-4 max-w-2xl text-lg leading-8 text-white/85">{tribute.message}</p>
+            {tribute.primaryPhotoUrl && (
+              <div className="mt-6 flex items-center gap-3 rounded-2xl bg-white/14 p-3 backdrop-blur">
+                <img src={tribute.primaryPhotoUrl} alt={tribute.name} className="size-12 rounded-full object-cover" />
+                <p className="text-xs font-semibold text-white/78">Primary photo selected</p>
               </div>
-            </div>
-          ) : (
-            <div className="relative flex min-h-[300px] flex-col justify-end">
-              <p className="eyebrow-light">In Loving Memory</p>
-              <h1 className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">{tribute.name}</h1>
-              {years && <p className="mt-3 text-lg text-white/80">{years}</p>}
-              <p className="mt-6 line-clamp-4 max-w-2xl text-lg leading-8 text-white/85">{tribute.message}</p>
-            </div>
             )}
+            </div>
         </div>
 
         <div className="border-b border-ink/10 bg-cream p-4 sm:p-5">
