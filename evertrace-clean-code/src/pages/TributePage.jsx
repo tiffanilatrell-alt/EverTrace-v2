@@ -1,4 +1,4 @@
-import { Copy, Leaf, Mail, MessageCircle, QrCode, Share2, X } from "lucide-react";
+import { Copy, Leaf, Mail, MessageCircle, Music, QrCode, Share2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { defaultBanner, getBannerById } from "../data/bannerPresets";
@@ -370,6 +370,37 @@ export default function TributePage() {
             <p className="eyebrow">Their Story</p>
             <h2 className="mt-3 text-3xl font-semibold">A life remembered together</h2>
             <p className="mt-4 whitespace-pre-line leading-8 text-ink/70">{storyText}</p>
+
+            {tribute.favoriteSong && (
+              <section className="mt-8 rounded-3xl border border-rich-purple/10 bg-white p-5 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-light-purple text-deep-purple">
+                    <Music size={19} />
+                  </span>
+                  <div>
+                    <p className="eyebrow">A Song They Loved</p>
+                    {tribute.favoriteSong.title && (
+                      <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">{tribute.favoriteSong.title}</h3>
+                    )}
+                    {tribute.favoriteSong.artist && <p className="mt-1 text-sm text-ink/60">by {tribute.favoriteSong.artist}</p>}
+                    <p className="mt-3 text-sm leading-6 text-ink/65">
+                      Press play to remember {tribute.name || "them"} with a song chosen in their honor.
+                    </p>
+                      {tribute.favoriteSong.url && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            window.open(tribute.favoriteSong.url, "_blank", "noopener,noreferrer")
+                          }
+                          className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-deep-purple px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-rich-purple"
+                        >
+                          Play this song
+                        </button>
+                      )}
+                  </div>
+                </div>
+              </section>
+            )}
 
             <LifeTimeline
               name={tribute.name}

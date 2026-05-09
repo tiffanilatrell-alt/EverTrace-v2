@@ -1,4 +1,4 @@
-import { Copy, Mail, MessageCircle, QrCode, Share2, Sparkles, X } from "lucide-react";
+import { Copy, Mail, MessageCircle, Music, Share2, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { getBannerById } from "../data/bannerPresets";
@@ -212,6 +212,30 @@ export default function ExampleTribute() {
               She had a way of making everyone feel expected, as if the table had been waiting for them all along. This tribute gathers the stories, phrases, and everyday details that still carry her presence.
             </p>
 
+            <section className="mt-8 rounded-3xl border border-rich-purple/10 bg-white p-5 shadow-sm">
+              <div className="flex items-start gap-3">
+                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-light-purple text-deep-purple">
+                  <Music size={19} />
+                </span>
+                <div>
+                  <p className="eyebrow">A Song They Loved</p>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">Lovely Day</h3>
+                  <p className="mt-1 text-sm text-ink/60">by Bill Withers</p>
+                  <p className="mt-3 text-sm leading-6 text-ink/65">
+                    Press play to remember Jean with a song chosen in her honor.
+                  </p>
+                  <a
+                    href="https://www.youtube.com/results?search_query=Bill+Withers+Lovely+Day"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-deep-purple px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-rich-purple"
+                  >
+                    Play this song
+                  </a>
+                </div>
+              </div>
+            </section>
+
             <LifeTimeline
               name="Jean E. White"
               birthYear="1950"
@@ -271,7 +295,11 @@ export default function ExampleTribute() {
             </div>
 
             <div className="rounded-3xl border border-ink/10 p-5">
-              <QrCode className="text-deep-purple" size={22} />
+              <img
+                src="/qrCodeInBox.jpg"
+                alt="QR memorial plaque displayed in a keepsake box"
+                className="h-20 w-20 rounded-2xl object-cover shadow-sm"
+              />
               <p className="mt-3 font-semibold">Preserve this tribute in the real world</p>
               <p className="mt-2 text-sm leading-6 text-ink/60">
                 A weatherproof stainless steel QR plaque can connect this story to a gravesite, urn space, memorial garden, or family keepsake.

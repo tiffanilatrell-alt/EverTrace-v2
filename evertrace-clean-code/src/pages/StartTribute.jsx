@@ -15,6 +15,9 @@ const initialForm = {
   story: "",
   creatorName: "",
   email: "",
+  songTitle: "",
+  songArtist: "",
+  songUrl: "",
   bannerId: defaultBanner.id,
 };
 
@@ -52,6 +55,40 @@ function getYearFromDate(value) {
   return match?.[1] || "";
 }
 
+function detectSongPlatform(url = "") {
+  const lower = url.toLowerCase();
+
+  if (lower.includes("spotify.com")) return "spotify";
+  if (lower.includes("youtube.com") || lower.includes("youtu.be")) return "youtube";
+  if (lower.includes("music.apple.com")) return "apple";
+
+  return "other";
+}
+
+function normalizeSongUrl(url = "") {
+  const trimmedUrl = url.trim();
+
+  if (!trimmedUrl) return "";
+  if (/^https?:\/\//i.test(trimmedUrl)) return trimmedUrl;
+
+  return `https://${trimmedUrl}`;
+}
+
+function buildFavoriteSong(form) {
+  const title = form.songTitle.trim();
+  const artist = form.songArtist.trim();
+  const url = normalizeSongUrl(form.songUrl);
+
+  if (!title && !artist && !url) return null;
+
+  return {
+    title,
+    artist,
+    url,
+    platform: detectSongPlatform(url),
+  };
+}
+
 function parseDateInput(value) {
   if (!value.trim()) return null;
 
@@ -82,6 +119,9 @@ function trimFormValues(form) {
     story: form.story.trim(),
     creatorName: form.creatorName.trim(),
     email: form.email.trim(),
+    songTitle: form.songTitle.trim(),
+    songArtist: form.songArtist.trim(),
+    songUrl: form.songUrl.trim(),
   };
 }
 
@@ -375,8 +415,10 @@ export default function StartTribute() {
 
     try {
       const cleanedForm = trimFormValues(form);
+      const favoriteSong = buildFavoriteSong(cleanedForm);
       const tribute = await createTribute({
         ...cleanedForm,
+        favoriteSong,
         bannerUrl: getBannerById(cleanedForm.bannerId).imageUrl,
         visibility: "public",
       });
@@ -688,6 +730,34 @@ export default function StartTribute() {
                   required
                 />
               </div>
+
+              <div className="rounded-3xl border border-rich-purple/10 bg-cream p-5">
+                <p className="text-sm font-semibold text-ink/72">A song that reminds you of them</p>
+                <p className="mt-2 text-sm leading-6 text-ink/55">
+                  Add a song family and friends can play while remembering them.
+                </p>
+                <div className="mt-4 grid gap-3">
+                  <TextField
+                    label="Song title"
+                    value={form.songTitle}
+                    onChange={(value) => updateField("songTitle", value)}
+                    placeholder="A favorite song or hymn"
+                  />
+                  <TextField
+                    label="Artist"
+                    value={form.songArtist}
+                    onChange={(value) => updateField("songArtist", value)}
+                    placeholder="Artist or performer"
+                  />
+                  <TextField
+                    label="Song link"
+                    type="url"
+                    value={form.songUrl}
+                    onChange={(value) => updateField("songUrl", value)}
+                    placeholder="Spotify, YouTube, Apple Music, or another link"
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -719,6 +789,14 @@ export default function StartTribute() {
                     />
                     <p className="text-sm leading-6 text-ink/60">{photos.length} photo{photos.length === 1 ? "" : "s"} selected.</p>
                   </div>
+                </div>
+              )}
+              {(form.songTitle || form.songArtist || form.songUrl) && (
+                <div className="mt-5 rounded-3xl border border-ink/10 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Favorite Song</p>
+                  <p className="mt-3 font-semibold text-ink">{form.songTitle || "Song added"}</p>
+                  {form.songArtist && <p className="mt-1 text-sm text-ink/60">by {form.songArtist}</p>}
+                  {form.songUrl && <p className="mt-2 break-all text-sm leading-6 text-ink/50">{form.songUrl}</p>}
                 </div>
               )}
               <div className="mt-5 flex items-center gap-3 rounded-2xl border border-ink/10 px-4 py-3 text-sm text-ink/60">
