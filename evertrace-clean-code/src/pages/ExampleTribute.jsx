@@ -119,16 +119,17 @@ export default function ExampleTribute() {
           <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover object-center" />
           <div className="absolute inset-0 bg-[linear-gradient(rgba(45,27,78,0.75),rgba(45,27,78,0.55))]" />
           <p className="eyebrow-light absolute right-6 top-6 z-10 sm:right-8 sm:top-8">Example Tribute</p>
-          <div className="relative flex min-h-[376px] flex-col justify-end">
-            <p className="eyebrow-light">In Loving Memory</p>
-            <h1 className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">Jean E. White</h1>
-            <p className="mt-3 text-lg text-white/80">1950 - 2005</p>
-            <p className="mt-6 line-clamp-4 max-w-2xl text-lg leading-8 text-white/85">
-              To know Jean was to feel remembered. She had a quiet confidence and a thoughtful way of speaking, and somehow she always made you believe in yourself. She was my mom. ~Tiffani Latrell
-            </p>
-            <div className="mt-6 flex items-center gap-3 rounded-2xl bg-white/14 p-3 backdrop-blur">
-              <img src="/example-primary.png" alt="Jean E. White" className="size-12 rounded-full object-cover" />
-              <p className="text-xs font-semibold text-white/78">Primary photo selected</p>
+          <div className="relative grid min-h-[376px] gap-6 pt-12 sm:grid-cols-[15rem_1fr] sm:items-end sm:pt-10 lg:grid-cols-[17rem_1fr]">
+            <div className="mx-auto w-44 overflow-hidden rounded-[1.5rem] border border-white/25 bg-white/14 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full">
+              <img src="/example-primary.png" alt="Jean E. White" className="aspect-[4/5] w-full rounded-[1.1rem] object-cover object-[center_30%]" />
+            </div>
+            <div className="flex flex-col justify-end">
+              <p className="eyebrow-light">In Loving Memory</p>
+              <h1 className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">Jean E. White</h1>
+              <p className="mt-3 text-lg text-white/80">1950 - 2005</p>
+              <p className="mt-6 line-clamp-4 max-w-2xl text-lg leading-8 text-white/85">
+                To know Jean was to feel remembered. She had a quiet confidence and a thoughtful way of speaking, and somehow she always made you believe in yourself. She was my mom. ~Tiffani Latrell
+              </p>
             </div>
           </div>
         </div>

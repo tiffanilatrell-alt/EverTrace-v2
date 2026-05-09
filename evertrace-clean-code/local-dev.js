@@ -104,6 +104,8 @@ server.listen(5173, "127.0.0.1", () => {
   console.log("Local: http://127.0.0.1:5173/");
 });
 
+setInterval(() => {}, 1_000_000);
+
 /*
 const server = await createViteServer({
   server: {

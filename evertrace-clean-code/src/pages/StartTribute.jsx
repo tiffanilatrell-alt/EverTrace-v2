@@ -800,17 +800,26 @@ function TributePreview({ name, years, message, primaryPhoto, banner, compact = 
         <div className={`relative ${compact ? "min-h-[260px]" : "min-h-[420px]"}`}>
           <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-deep-purple/90 via-deep-purple/35 to-deep-purple/10" />
-          <div className={`relative flex flex-col justify-end p-5 text-white ${compact ? "min-h-[260px]" : "min-h-[420px]"}`}>
-            <p className="eyebrow-light">In Loving Memory</p>
-            <h2 className={`${compact ? "text-2xl" : "text-3xl"} mt-2 font-semibold tracking-tight`}>{name}</h2>
-            <p className="mt-1 text-sm text-white/75">{years || "Years can be added later"}</p>
-            <p className="mt-4 line-clamp-4 text-sm leading-6 text-white/82">{message}</p>
+          <div
+            className={`relative grid gap-4 p-5 text-white ${
+              compact
+                ? "min-h-[260px]"
+                : primaryPhoto
+                  ? "min-h-[420px] sm:grid-cols-[9rem_1fr] sm:items-end"
+                  : "min-h-[420px]"
+            }`}
+          >
             {primaryPhoto && (
-              <div className="mt-5 flex items-center gap-3 rounded-2xl bg-white/12 p-3 backdrop-blur">
-                <img src={primaryPhoto.previewUrl} alt="Primary portrait preview" className="size-12 rounded-full object-cover" />
-                <p className="text-xs font-semibold text-white/75">Primary photo selected</p>
+              <div className={`${compact ? "hidden" : "mx-auto w-32 overflow-hidden rounded-[1.25rem] border border-white/25 bg-white/14 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full"}`}>
+                <img src={primaryPhoto.previewUrl} alt="Primary portrait preview" className="aspect-[4/5] w-full rounded-[0.9rem] object-cover object-[center_30%]" />
               </div>
             )}
+            <div className="flex flex-col justify-end">
+              <p className="eyebrow-light">In Loving Memory</p>
+              <h2 className={`${compact ? "text-2xl" : "text-3xl"} mt-2 font-semibold tracking-tight`}>{name}</h2>
+              <p className="mt-1 text-sm text-white/75">{years || "Years can be added later"}</p>
+              <p className="mt-4 line-clamp-4 text-sm leading-6 text-white/82">{message}</p>
+            </div>
           </div>
         </div>
       </div>

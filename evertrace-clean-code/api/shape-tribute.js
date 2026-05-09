@@ -1,5 +1,3 @@
-import { cert, getApps as getAdminApps, initializeApp as initializeAdminApp } from "firebase-admin/app";
-import { FieldValue, getFirestore as getAdminFirestore } from "firebase-admin/firestore";
 import { getApps as getClientApps, initializeApp as initializeClientApp } from "firebase/app";
 import {
   doc,
@@ -57,13 +55,15 @@ function getFirebaseAdminConfig() {
   return null;
 }
 
-function getAdminDb() {
+async function getAdminDb() {
   const adminConfig = getFirebaseAdminConfig();
 
   if (!adminConfig?.projectId || !adminConfig?.clientEmail || !adminConfig?.privateKey) {
     return null;
   }
 
+  const { cert, getApps: getAdminApps, initializeApp: initializeAdminApp } = await import("firebase-admin/app");
+  const { getFirestore: getAdminFirestore } = await import("firebase-admin/firestore");
   const app =
     getAdminApps()[0] ||
     initializeAdminApp({
@@ -112,9 +112,10 @@ function extractResponseText(payload) {
 }
 
 async function reserveAiUse(sessionId) {
-  const adminDb = getAdminDb();
+  const adminDb = await getAdminDb();
 
   if (adminDb) {
+    const { FieldValue } = await import("firebase-admin/firestore");
     const usageRef = adminDb.collection("aiUsage").doc(sessionId);
 
     return adminDb.runTransaction(async (transaction) => {
@@ -193,9 +194,10 @@ async function reserveAiUse(sessionId) {
 
 async function releaseAiUse(sessionId) {
   try {
-    const adminDb = getAdminDb();
+    const adminDb = await getAdminDb();
 
     if (adminDb) {
+      const { FieldValue } = await import("firebase-admin/firestore");
       await adminDb.collection("aiUsage").doc(sessionId).update({
         count: FieldValue.increment(-1),
         updatedAt: FieldValue.serverTimestamp(),
