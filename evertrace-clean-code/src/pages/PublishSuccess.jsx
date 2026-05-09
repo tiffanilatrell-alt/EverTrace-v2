@@ -10,6 +10,8 @@ export default function PublishSuccess() {
   const [copied, setCopied] = useState(false);
   const [manageCopied, setManageCopied] = useState(false);
   const manageToken = searchParams.get("manageToken") || "";
+  const visibility = searchParams.get("visibility") || "private";
+  const isPrivate = visibility === "private";
   const tributePath = `/tribute/${tributeId}`;
   const managePath = manageToken ? `/manage/${tributeId}?token=${manageToken}` : "";
   const tributeUrl = typeof window === "undefined" ? tributePath : `${window.location.origin}${tributePath}`;
@@ -65,9 +67,27 @@ export default function PublishSuccess() {
           <Check size={26} />
         </div>
 
-        <p className="eyebrow mt-8">Published</p>
+        <p className="eyebrow mt-8">{isPrivate ? "Private Tribute Ready" : "Published"}</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">Your tribute is live.</h1>
-        <p className="mt-4 max-w-xl leading-8 text-ink/65">{shareText}</p>
+        <p className="mt-4 max-w-xl leading-8 text-ink/65">
+          {isPrivate
+            ? "Your tribute is private for now. Share this link with the family and friends you choose."
+            : shareText}
+        </p>
+
+        <div className="mt-7 rounded-3xl border border-rich-purple/15 bg-light-purple/30 p-5">
+          <p className="text-sm font-semibold text-ink">Visibility: {isPrivate ? "Private" : "Public"}</p>
+          <p className="mt-2 leading-7 text-ink/65">
+            {isPrivate
+              ? "Only people with this link can view the tribute. You can share it privately with family now."
+              : "This tribute is ready to be shared more openly with family and friends."}
+          </p>
+          {isPrivate && (
+            <p className="mt-2 text-sm leading-6 text-ink/55">
+              You can make it public later from your private creator link.
+            </p>
+          )}
+        </div>
 
         <div className="mt-7 rounded-3xl bg-cream p-4">
           <p className="text-sm font-semibold text-ink/55">Tribute link</p>
@@ -99,7 +119,6 @@ export default function PublishSuccess() {
           <ExternalLink size={18} /> View Tribute
         </Link>
 
-
         {manageUrl && (
           <div className="mt-7 rounded-3xl border border-rich-purple/15 bg-light-purple/30 p-5">
             <p className="text-sm font-semibold text-ink">Save your private creator link</p>
@@ -125,6 +144,7 @@ export default function PublishSuccess() {
             </div>
           </div>
         )}
+
         <div className="mt-7 rounded-3xl border border-ink/10 p-5">
           <QrCode className="text-deep-purple" size={24} />
           <p className="mt-3 font-semibold">Preserve it later</p>

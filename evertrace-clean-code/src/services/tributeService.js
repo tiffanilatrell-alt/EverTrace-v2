@@ -296,11 +296,12 @@ export function subscribeToTimelineEvents(tributeId, onChange, onError) {
 
 export async function addTimelineEvent(tributeId, { year, title, description }) {
   const cleanYear = year.trim();
+  const yearNumber = Number(cleanYear.match(/\d{4}/)?.[0]) || Number(cleanYear) || 0;
 
   const timelineRef = await addDoc(collection(db, TRIBUTES_COLLECTION, tributeId, TIMELINE_COLLECTION), {
     tributeId,
     year: cleanYear,
-    yearNumber: Number(cleanYear) || 0,
+    yearNumber,
     title: title.trim(),
     description: description.trim(),
     createdAt: serverTimestamp(),

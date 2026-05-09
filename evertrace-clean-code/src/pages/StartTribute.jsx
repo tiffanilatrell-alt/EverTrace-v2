@@ -1,9 +1,9 @@
-import { ArrowLeft, ArrowRight, Camera, Check, Sparkles, Star, Undo2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Camera, Check, Plus, Sparkles, Star, Undo2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { bannerPresets, defaultBanner, getBannerById } from "../data/bannerPresets";
-import { createTribute, uploadTributePhotos } from "../services/tributeService";
+import { addTimelineEvent, createTribute, uploadTributePhotos } from "../services/tributeService";
 
 const initialForm = {
   name: "",
@@ -19,11 +19,17 @@ const initialForm = {
   songArtist: "",
   songUrl: "",
   bannerId: defaultBanner.id,
+  visibility: "private",
 };
 
 const AI_USE_LIMIT = 5;
 const AI_USE_STORAGE_KEY = "evertrace-tribute-builder-ai-uses";
 const AI_SESSION_STORAGE_KEY = "evertrace-tribute-builder-ai-session";
+const initialTimelineForm = {
+  year: "",
+  title: "",
+  description: "",
+};
 
 function getOrCreateAiSessionId() {
   if (typeof window === "undefined") return "";
@@ -107,6 +113,34 @@ function parseDateInput(value) {
   return date;
 }
 
+function buildTimelinePreviewItems({ name, birthYear, passingYear, events }) {
+  const generatedItems = [
+    birthYear && {
+      id: "birth",
+      year: birthYear,
+      title: `${name || "They"} was born`,
+      description: "The beginning of a life that would leave a lasting trace.",
+      generated: true,
+      yearNumber: Number(birthYear) || 0,
+    },
+    passingYear && {
+      id: "passing",
+      year: passingYear,
+      title: "A life remembered",
+      description: "Their story continues through the people, memories, and love they left behind.",
+      generated: true,
+      yearNumber: Number(passingYear) || 9999,
+    },
+  ].filter(Boolean);
+
+  return [...generatedItems, ...events]
+    .map((item) => ({
+      ...item,
+      yearNumber: item.yearNumber || Number(String(item.year).match(/\d{4}/)?.[0]) || Number(item.year) || 0,
+    }))
+    .sort((a, b) => a.yearNumber - b.yearNumber);
+}
+
 function trimFormValues(form) {
   return {
     ...form,
@@ -122,6 +156,7 @@ function trimFormValues(form) {
     songTitle: form.songTitle.trim(),
     songArtist: form.songArtist.trim(),
     songUrl: form.songUrl.trim(),
+    visibility: form.visibility,
   };
 }
 
@@ -135,8 +170,8 @@ const stepCopy = {
     body: "Add the essentials. Sharing, family memories, and plaques can come later.",
   },
   3: {
-    title: "Ready to publish",
-    body: "Create the tribute, then invite family to add their memories.",
+    title: "Review before publishing",
+    body: "Look everything over, choose privacy, and publish only when it feels ready.",
   },
 };
 
@@ -149,6 +184,10 @@ export default function StartTribute() {
   const [saving, setSaving] = useState(false);
   const [savingLabel, setSavingLabel] = useState("Creating...");
   const [error, setError] = useState("");
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
+  const [timelineEvents, setTimelineEvents] = useState([]);
+  const [timelineForm, setTimelineForm] = useState(initialTimelineForm);
+  const [isTimelineFormOpen, setIsTimelineFormOpen] = useState(false);
   const [introAiLoading, setIntroAiLoading] = useState(false);
   const [storyAiLoading, setStoryAiLoading] = useState(false);
   const [introAiMessage, setIntroAiMessage] = useState("");
@@ -370,6 +409,31 @@ export default function StartTribute() {
     );
   }
 
+  function addDraftTimelineEvent() {
+    const year = timelineForm.year.trim();
+    const title = timelineForm.title.trim();
+    const description = timelineForm.description.trim();
+
+    if (!year || !title) return;
+
+    setTimelineEvents((current) => [
+      ...current,
+      {
+        id: crypto.randomUUID(),
+        year,
+        title,
+        description,
+        yearNumber: Number(year.match(/\d{4}/)?.[0]) || Number(year) || 0,
+      },
+    ]);
+    setTimelineForm(initialTimelineForm);
+    setIsTimelineFormOpen(false);
+  }
+
+  function removeDraftTimelineEvent(eventId) {
+    setTimelineEvents((current) => current.filter((event) => event.id !== eventId));
+  }
+
   function canContinueFromDetails() {
     return form.name.trim() && form.message.trim() && form.story.trim() && form.creatorName.trim() && form.email.trim();
   }
@@ -387,6 +451,7 @@ export default function StartTribute() {
 
   function goToNextStep() {
     setError("");
+    setShowPublishConfirm(false);
 
     if (step === 2 && !canContinueFromDetails()) {
       setError("Add their name, banner intro, full story, your name, and your email to continue.");
@@ -404,11 +469,11 @@ export default function StartTribute() {
 
   function goBackStep() {
     setError("");
+    setShowPublishConfirm(false);
     setStep((current) => Math.max(current - 1, 1));
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+  async function publishTribute() {
     setError("");
     setSaving(true);
     setSavingLabel("Creating tribute...");
@@ -420,7 +485,7 @@ export default function StartTribute() {
         ...cleanedForm,
         favoriteSong,
         bannerUrl: getBannerById(cleanedForm.bannerId).imageUrl,
-        visibility: "public",
+        visibility: cleanedForm.visibility,
       });
 
       if (photos.length) {
@@ -428,11 +493,33 @@ export default function StartTribute() {
         await uploadTributePhotos(tribute.id, photos, primaryPhotoId || photos[0].id);
       }
 
-      navigate(`/published/${tribute.id}?manageToken=${tribute.manageToken}`);
+      if (timelineEvents.length) {
+        setSavingLabel("Saving timeline...");
+        await Promise.all(
+          timelineEvents.map((event) =>
+            addTimelineEvent(tribute.id, {
+              year: event.year,
+              title: event.title,
+              description: event.description,
+            }),
+          ),
+        );
+      }
+
+      navigate(`/published/${tribute.id}?manageToken=${tribute.manageToken}&visibility=${cleanedForm.visibility}`);
     } catch (err) {
       setError("We could not create the tribute yet. Please check your Firebase setup and storage rules, then try again.");
       setSaving(false);
       setSavingLabel("Creating...");
+    }
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+
+    if (step < 3) {
+      goToNextStep();
     }
   }
 
@@ -443,6 +530,12 @@ export default function StartTribute() {
   const previewMessage = form.message.trim() || "A few loving words will appear here as the tribute begins to take shape.";
   const aiUsesRemaining = Math.max(AI_USE_LIMIT - aiUseCount, 0);
   const aiLimitReached = aiUsesRemaining <= 0;
+  const timelinePreviewItems = buildTimelinePreviewItems({
+    name: form.name.trim(),
+    birthYear: form.birthYear,
+    passingYear: form.passingYear,
+    events: timelineEvents,
+  });
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-7xl flex-col justify-center px-4 py-8 sm:px-6">
@@ -763,14 +856,199 @@ export default function StartTribute() {
 
           {step === 3 && (
             <div>
-              <p className="eyebrow">Review</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight">{form.name || "Your tribute"}</h2>
-              <p className="mt-2 text-ink/60">
-                {[form.birthYear, form.passingYear].filter(Boolean).join(" - ") || "Years can be added later"}
+              <p className="eyebrow">Verification</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight">Review before going live</h2>
+              <p className="mt-3 max-w-2xl leading-7 text-ink/62">
+                Take a quiet moment to check the tribute. Nothing is published until you choose the visibility and press
+                publish.
               </p>
+
+              <div className="mt-6 rounded-3xl border border-rich-purple/10 bg-cream p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Tribute For</p>
+                <p className="mt-3 text-2xl font-semibold text-ink">{form.name || "Your tribute"}</p>
+                <p className="mt-1 text-ink/60">
+                {[form.birthYear, form.passingYear].filter(Boolean).join(" - ") || "Years can be added later"}
+                </p>
+              </div>
+
+              <div className="mt-5 rounded-3xl border border-rich-purple/10 bg-white p-5 shadow-sm">
+                <p className="text-sm font-semibold text-ink">Choose visibility before publishing</p>
+                <p className="mt-2 text-sm leading-6 text-ink/58">
+                  Private is safest while you review with family. Public is for tributes you feel ready to share more
+                  openly.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {[
+                    {
+                      value: "private",
+                      title: "Private",
+                      body: "Only people with the link can view this tribute.",
+                    },
+                    {
+                      value: "public",
+                      title: "Public",
+                      body: "This tribute can be shared more openly and may be discoverable later.",
+                    },
+                  ].map((option) => {
+                    const isSelected = form.visibility === option.value;
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => updateField("visibility", option.value)}
+                        className={`rounded-3xl border p-4 text-left transition ${
+                          isSelected
+                            ? "border-rich-purple bg-light-purple/45 ring-4 ring-rich-purple/10"
+                            : "border-ink/10 bg-white hover:border-rich-purple/35"
+                        }`}
+                      >
+                        <span className="flex items-center justify-between gap-3">
+                          <span className="font-semibold text-ink">{option.title}</span>
+                          {isSelected && <Check className="text-deep-purple" size={18} />}
+                        </span>
+                        <span className="mt-2 block text-sm leading-6 text-ink/58">{option.body}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-5 overflow-hidden rounded-3xl border border-rich-purple/10 bg-white shadow-sm">
+                <div className="flex items-start justify-between gap-4 bg-light-purple/45 px-5 py-5">
+                  <div>
+                    <p className="eyebrow">Life Timeline</p>
+                    <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">Important dates</h3>
+                    <p className="mt-2 text-sm leading-6 text-ink/60">
+                      Birth and passing dates are added automatically. You can add another meaningful date now, or skip
+                      this for later.
+                    </p>
+                  </div>
+                  {!isTimelineFormOpen && (
+                    <button
+                      type="button"
+                      onClick={() => setIsTimelineFormOpen(true)}
+                      className="grid size-11 shrink-0 place-items-center rounded-full bg-deep-purple text-white shadow-sm transition hover:bg-rich-purple"
+                      aria-label="Add an important date"
+                    >
+                      <Plus size={20} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="px-5 py-5">
+                  {timelinePreviewItems.length > 0 ? (
+                    <div className="relative">
+                      <div className="absolute bottom-3 left-5 top-3 w-px bg-rich-purple/18" />
+                      <div className="space-y-4">
+                        {timelinePreviewItems.map((item) => (
+                          <article key={item.id} className="relative grid grid-cols-[2.5rem_1fr] gap-3">
+                            <div className="relative z-10 grid size-10 place-items-center rounded-full border border-rich-purple/15 bg-cream text-deep-purple shadow-sm">
+                              <CalendarDays size={16} />
+                            </div>
+                            <div className="rounded-2xl border border-ink/10 bg-cream/70 p-4">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-deep-purple shadow-sm">
+                                    {item.year}
+                                  </span>
+                                  {item.generated && (
+                                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink/35">
+                                      Auto
+                                    </span>
+                                  )}
+                                </div>
+                                {!item.generated && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeDraftTimelineEvent(item.id)}
+                                    className="grid size-8 place-items-center rounded-full bg-white text-ink/50 transition hover:bg-stone"
+                                    aria-label={`Remove ${item.title}`}
+                                  >
+                                    <X size={15} />
+                                  </button>
+                                )}
+                              </div>
+                              <h4 className="mt-3 font-semibold text-ink">{item.title}</h4>
+                              {item.description && <p className="mt-2 text-sm leading-6 text-ink/62">{item.description}</p>}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-rich-purple/20 bg-cream p-4 text-sm leading-6 text-ink/60">
+                      Add birth and passing dates, or add an important date below, to begin the timeline.
+                    </div>
+                  )}
+
+                  {isTimelineFormOpen ? (
+                    <div className="mt-5 rounded-3xl border border-rich-purple/15 bg-light-purple/40 p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-semibold text-deep-purple">Add an important date</p>
+                          <p className="mt-1 text-sm leading-6 text-ink/60">
+                            A wedding, move, milestone, favorite chapter, or family moment.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTimelineForm(initialTimelineForm);
+                            setIsTimelineFormOpen(false);
+                          }}
+                          className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-ink/60 transition hover:bg-cream"
+                          aria-label="Cancel timeline entry"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-[9rem_1fr]">
+                        <input
+                          value={timelineForm.year}
+                          onChange={(event) => setTimelineForm((current) => ({ ...current, year: event.target.value }))}
+                          placeholder="Year or date"
+                          inputMode="numeric"
+                          className="min-h-12 rounded-full border border-ink/10 bg-white px-4 outline-none focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
+                        />
+                        <input
+                          value={timelineForm.title}
+                          onChange={(event) => setTimelineForm((current) => ({ ...current, title: event.target.value }))}
+                          placeholder="What happened?"
+                          className="min-h-12 rounded-full border border-ink/10 bg-white px-4 outline-none focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
+                        />
+                      </div>
+                      <textarea
+                        value={timelineForm.description}
+                        onChange={(event) => setTimelineForm((current) => ({ ...current, description: event.target.value }))}
+                        placeholder="Add a few details, if you want."
+                        rows={3}
+                        className="mt-3 w-full resize-none rounded-3xl border border-ink/10 bg-white px-4 py-3 leading-7 outline-none focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
+                      />
+                      <button
+                        type="button"
+                        onClick={addDraftTimelineEvent}
+                        disabled={!timelineForm.year.trim() || !timelineForm.title.trim()}
+                        className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-deep-purple px-5 font-semibold text-white transition hover:bg-rich-purple disabled:cursor-not-allowed disabled:bg-deep-purple/40 sm:w-auto"
+                      >
+                        Add to Timeline
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsTimelineFormOpen(true)}
+                      className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-rich-purple/25 bg-white px-5 text-sm font-semibold text-deep-purple transition hover:bg-light-purple sm:w-auto"
+                    >
+                      <Plus size={16} /> Add an important date
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="mt-5 rounded-3xl bg-cream p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Banner Intro</p>
-                <p className="line-clamp-4 leading-8 text-ink/70">{form.message}</p>
+                <p className="mt-2 line-clamp-4 leading-8 text-ink/70">{form.message}</p>
               </div>
               {form.story.trim() && (
                 <div className="mt-4 rounded-3xl border border-ink/10 p-5">
@@ -801,7 +1079,7 @@ export default function StartTribute() {
               )}
               <div className="mt-5 flex items-center gap-3 rounded-2xl border border-ink/10 px-4 py-3 text-sm text-ink/60">
                 <Check className="shrink-0 text-deep-purple" size={18} />
-                After publishing, you can share the link and invite family to add memories.
+                When you publish, EverTrace will create the tribute page and then show you the share link.
               </div>
             </div>
           )}
@@ -828,11 +1106,12 @@ export default function StartTribute() {
               </button>
             ) : (
               <button
-                type="submit"
+                type="button"
+                onClick={() => setShowPublishConfirm(true)}
                 disabled={saving}
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-deep-purple px-5 py-3 font-semibold text-white transition hover:bg-rich-purple disabled:cursor-not-allowed disabled:bg-deep-purple/45"
               >
-                {saving ? savingLabel : "Create Tribute"} <ArrowRight size={18} />
+                {saving ? savingLabel : "Publish Tribute"} <ArrowRight size={18} />
               </button>
             )}
           </div>
@@ -866,6 +1145,50 @@ export default function StartTribute() {
           />
         </aside>
       </section>
+
+      {showPublishConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-deep-purple/45 px-4 py-5 backdrop-blur-sm sm:items-center">
+          <section className="w-full max-w-lg rounded-[2rem] border border-white/50 bg-white p-5 shadow-soft sm:p-7">
+            <p className="eyebrow">Final Check</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">Ready to publish?</h2>
+            <p className="mt-3 leading-7 text-ink/65">
+              This will create the tribute page for {form.name || "your loved one"}. You will still get a private
+              creator link after publishing so you can return to it later.
+            </p>
+
+            <div className="mt-5 rounded-3xl bg-cream p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Visibility</p>
+              <p className="mt-2 font-semibold text-ink">
+                {form.visibility === "private" ? "Private" : "Public"}
+              </p>
+              <p className="mt-1 text-sm leading-6 text-ink/58">
+                {form.visibility === "private"
+                  ? "Only people with the link can view this tribute."
+                  : "This tribute can be shared more openly and may be discoverable later."}
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setShowPublishConfirm(false)}
+                disabled={saving}
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-rich-purple/35 bg-white px-5 font-semibold text-ink transition hover:bg-stone disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Keep Editing
+              </button>
+              <button
+                type="button"
+                onClick={publishTribute}
+                disabled={saving}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-deep-purple px-5 font-semibold text-white transition hover:bg-rich-purple disabled:cursor-not-allowed disabled:bg-deep-purple/45"
+              >
+                {saving ? savingLabel : "Yes, Publish Now"} <ArrowRight size={18} />
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
