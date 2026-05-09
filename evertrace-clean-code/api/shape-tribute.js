@@ -1,5 +1,14 @@
-import { initializeApp, getApps } from "firebase/app";
-import { doc, getFirestore, increment, runTransaction, serverTimestamp, updateDoc } from "firebase/firestore";
+import { cert, getApps as getAdminApps, initializeApp as initializeAdminApp } from "firebase-admin/app";
+import { FieldValue, getFirestore as getAdminFirestore } from "firebase-admin/firestore";
+import { getApps as getClientApps, initializeApp as initializeClientApp } from "firebase/app";
+import {
+  doc,
+  getFirestore as getClientFirestore,
+  increment,
+  runTransaction,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
 
 const MAX_NOTES_LENGTH = 1200;
 const MAX_SUGGESTION_LENGTH = 280;
@@ -7,10 +16,10 @@ const MAX_STORY_LENGTH = 1800;
 const AI_USE_LIMIT = 5;
 const SESSION_ID_PATTERN = /^[a-zA-Z0-9_-]{12,80}$/;
 
-function getDb() {
+function getClientDb() {
   const app =
-    getApps()[0] ||
-    initializeApp({
+    getClientApps()[0] ||
+    initializeClientApp({
       apiKey: process.env.VITE_FIREBASE_API_KEY,
       authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
       projectId: process.env.VITE_FIREBASE_PROJECT_ID,
@@ -19,7 +28,57 @@ function getDb() {
       appId: process.env.VITE_FIREBASE_APP_ID,
     });
 
-  return getFirestore(app);
+  return getClientFirestore(app);
+}
+
+function getFirebaseAdminConfig() {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      return {
+        projectId: serviceAccount.project_id,
+        clientEmail: serviceAccount.client_email,
+        privateKey: serviceAccount.private_key,
+      };
+    } catch (error) {
+      console.error("Invalid FIREBASE_SERVICE_ACCOUNT:", error?.message || error);
+      return null;
+    }
+  }
+
+  if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    return {
+      projectId: process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    };
+  }
+
+  return null;
+}
+
+function getAdminDb() {
+  const adminConfig = getFirebaseAdminConfig();
+
+  if (!adminConfig?.projectId || !adminConfig?.clientEmail || !adminConfig?.privateKey) {
+    return null;
+  }
+
+  const app =
+    getAdminApps()[0] ||
+    initializeAdminApp({
+      credential: cert(adminConfig),
+    });
+
+  return getAdminFirestore(app);
+}
+
+function hasClientFirebaseConfig() {
+  return Boolean(process.env.VITE_FIREBASE_API_KEY && process.env.VITE_FIREBASE_PROJECT_ID && process.env.VITE_FIREBASE_APP_ID);
+}
+
+function hasAnyFirebaseTrackerConfig() {
+  return Boolean(getFirebaseAdminConfig() || hasClientFirebaseConfig());
 }
 
 function limitHeroMessage(value) {
@@ -53,9 +112,50 @@ function extractResponseText(payload) {
 }
 
 async function reserveAiUse(sessionId) {
-  const usageRef = doc(getDb(), "aiUsage", sessionId);
+  const adminDb = getAdminDb();
 
-  return runTransaction(getDb(), async (transaction) => {
+  if (adminDb) {
+    const usageRef = adminDb.collection("aiUsage").doc(sessionId);
+
+    return adminDb.runTransaction(async (transaction) => {
+      const usageSnap = await transaction.get(usageRef);
+      const currentCount = usageSnap.exists ? usageSnap.data().count || 0 : 0;
+
+      if (currentCount >= AI_USE_LIMIT) {
+        return {
+          allowed: false,
+          count: currentCount,
+          usesRemaining: 0,
+        };
+      }
+
+      const nextCount = currentCount + 1;
+      const payload = {
+        count: nextCount,
+        limit: AI_USE_LIMIT,
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+
+      transaction.set(
+        usageRef,
+        {
+          ...payload,
+          createdAt: usageSnap.exists ? usageSnap.data().createdAt || FieldValue.serverTimestamp() : FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      return {
+        allowed: true,
+        count: nextCount,
+        usesRemaining: Math.max(AI_USE_LIMIT - nextCount, 0),
+      };
+    });
+  }
+
+  const usageRef = doc(getClientDb(), "aiUsage", sessionId);
+
+  return runTransaction(getClientDb(), async (transaction) => {
     const usageSnap = await transaction.get(usageRef);
     const currentCount = usageSnap.exists() ? usageSnap.data().count || 0 : 0;
 
@@ -93,7 +193,17 @@ async function reserveAiUse(sessionId) {
 
 async function releaseAiUse(sessionId) {
   try {
-    await updateDoc(doc(getDb(), "aiUsage", sessionId), {
+    const adminDb = getAdminDb();
+
+    if (adminDb) {
+      await adminDb.collection("aiUsage").doc(sessionId).update({
+        count: FieldValue.increment(-1),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      return;
+    }
+
+    await updateDoc(doc(getClientDb(), "aiUsage", sessionId), {
       count: increment(-1),
       updatedAt: serverTimestamp(),
     });
@@ -118,7 +228,7 @@ export default async function handler(request, response) {
     return;
   }
 
-  if (!process.env.VITE_FIREBASE_API_KEY || !process.env.VITE_FIREBASE_PROJECT_ID || !process.env.VITE_FIREBASE_APP_ID) {
+  if (!hasAnyFirebaseTrackerConfig()) {
     response.status(503).json({ error: "The AI usage tracker is not configured yet." });
     return;
   }
@@ -141,7 +251,15 @@ export default async function handler(request, response) {
   let usage;
 
   try {
-    usage = await reserveAiUse(cleanSessionId);
+    try {
+      usage = await reserveAiUse(cleanSessionId);
+    } catch (trackerError) {
+      console.error("AI usage tracker failed:", trackerError?.message || trackerError);
+      response.status(503).json({
+        error: "The AI usage tracker could not save this request yet. Please check Firebase Admin credentials or Firestore rules.",
+      });
+      return;
+    }
 
     if (!usage.allowed) {
       response.status(429).json({
