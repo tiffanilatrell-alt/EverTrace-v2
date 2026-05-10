@@ -520,8 +520,10 @@ export default function StartTribute() {
         );
       }
 
-      // --- Send Resend email with private link ---
-      const tributeUrl = `${window.location.origin}/tribute/${tribute.id}`;
+
+      // --- Send Resend email with tokenized private link ---
+      const privateToken = tribute.manageToken;
+      const tributeUrl = `${window.location.origin}/tribute/${tribute.id}?token=${privateToken}`;
       try {
         await fetch("/api/send-private-link", {
           method: "POST",
@@ -535,7 +537,7 @@ export default function StartTribute() {
           }),
         });
       } catch (emailError) {
-        console.warn("Tribute created, but email failed:", emailError);
+        console.warn("Tribute created, but private link email failed:", emailError);
       }
       // --- End Resend email ---
 
