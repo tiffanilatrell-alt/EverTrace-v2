@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "../lib/firebaseClient";
@@ -21,6 +22,8 @@ const MEMORIES_COLLECTION = "memories";
 const PHOTOS_COLLECTION = "photos";
 const TIMELINE_COLLECTION = "timeline";
 const ACCESS_COLLECTION = "tributeAccess";
+const PLAQUES_COLLECTION = "plaques";
+const PHOTO_LIMIT = 8;
 
 function createManageToken() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -98,9 +101,10 @@ export async function createTribute({
 
 export async function uploadTributePhotos(tributeId, photos, primaryPhotoId) {
   if (!photos.length) return [];
+  const limitedPhotos = photos.slice(0, PHOTO_LIMIT);
 
   const uploadedPhotos = await Promise.all(
-    photos.map(async (photo, index) => {
+    limitedPhotos.map(async (photo, index) => {
       const safeName = photo.file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
       const storagePath = `${TRIBUTES_COLLECTION}/${tributeId}/${PHOTOS_COLLECTION}/${Date.now()}-${index}-${safeName}`;
       const photoRef = ref(storage, storagePath);
@@ -310,6 +314,56 @@ export async function addTimelineEvent(tributeId, { year, title, description }) 
   return timelineRef.id;
 }
 
+export async function createPlaqueOrder(tributeId, plaqueOrder) {
+  const plaqueRef = await addDoc(collection(db, PLAQUES_COLLECTION), {
+    tributeId,
+    shortCode: plaqueOrder.shortCode?.trim() || "",
+    ownerEmail: plaqueOrder.email.trim(),
+    status: plaqueOrder.status || "ordered",
+    orderId: plaqueOrder.orderId || "",
+    productType: plaqueOrder.productType || "stainless_qr_plaque",
+    customerName: plaqueOrder.customerName?.trim() || "",
+    placement: plaqueOrder.placement,
+    shippingAddress: {
+      street: plaqueOrder.shippingStreet?.trim() || "",
+      street2: plaqueOrder.shippingStreet2?.trim() || "",
+      city: plaqueOrder.shippingCity?.trim() || "",
+      state: plaqueOrder.shippingState?.trim() || "",
+      zip: plaqueOrder.shippingZip?.trim() || "",
+    },
+    notes: plaqueOrder.notes?.trim() || "",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  await updateDoc(doc(db, TRIBUTES_COLLECTION, tributeId), {
+    plaqueId: plaqueRef.id,
+    updatedAt: serverTimestamp(),
+  });
+
+  return {
+    id: plaqueRef.id,
+  };
+}
+
+export async function getPlaqueByCode(shortCode) {
+  const plaqueQuery = query(
+    collection(db, PLAQUES_COLLECTION),
+    where("shortCode", "==", shortCode),
+    limit(1),
+  );
+  const plaqueSnap = await getDocs(plaqueQuery);
+
+  if (plaqueSnap.empty) return null;
+
+  const plaqueDoc = plaqueSnap.docs[0];
+
+  return {
+    id: plaqueDoc.id,
+    ...plaqueDoc.data(),
+  };
+}
+
 export async function addTributeReaction(tributeId, reaction) {
   await updateDoc(doc(db, TRIBUTES_COLLECTION, tributeId), {
     [`reactionCounts.${reaction}`]: increment(1),
@@ -334,4 +388,5 @@ export const firestoreCollections = {
   photos: `${TRIBUTES_COLLECTION}/{tributeId}/${PHOTOS_COLLECTION}`,
   timeline: `${TRIBUTES_COLLECTION}/{tributeId}/${TIMELINE_COLLECTION}`,
   access: ACCESS_COLLECTION,
+  plaques: PLAQUES_COLLECTION,
 };

@@ -1,4 +1,4 @@
-import { ArrowLeft, Copy, ExternalLink, LockKeyhole } from "lucide-react";
+import { ArrowLeft, Copy, ExternalLink, LockKeyhole, QrCode } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { getManagedTribute } from "../services/tributeService";
@@ -113,6 +113,24 @@ export default function ManageTribute() {
               >
                 <Copy size={18} /> Copy Private Link
               </button>
+            </div>
+
+            <div className="mt-7 rounded-3xl border border-rich-purple/15 bg-light-purple/30 p-5">
+              <div className="flex items-start gap-3">
+                <QrCode className="mt-1 shrink-0 text-deep-purple" size={22} />
+                <div>
+                  <p className="font-semibold text-ink">Order Memorial Plaque</p>
+                  <p className="mt-2 leading-7 text-ink/65">
+                    Turn this tribute into a permanent doorway to the family memory archive.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to={`/plaques/${tributeId}/order?token=${manageToken}`}
+                className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-deep-purple px-5 font-semibold text-white transition hover:bg-rich-purple sm:w-auto"
+              >
+                <QrCode size={18} /> Continue to Plaque Order
+              </Link>
             </div>
 
             <div className="mt-7 rounded-3xl border border-rich-purple/15 bg-light-purple/30 p-5">

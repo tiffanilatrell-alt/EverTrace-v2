@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, CalendarDays, Camera, Check, Plus, Sparkles, Star, Undo2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Camera, Check, ChevronLeft, ChevronRight, Plus, Sparkles, Star, Undo2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +23,7 @@ const initialForm = {
 };
 
 const AI_USE_LIMIT = 5;
+const PHOTO_LIMIT = 8;
 const AI_USE_STORAGE_KEY = "evertrace-tribute-builder-ai-uses";
 const AI_SESSION_STORAGE_KEY = "evertrace-tribute-builder-ai-session";
 const initialTimelineForm = {
@@ -356,10 +357,11 @@ export default function StartTribute() {
     setError("");
 
     setPhotos((currentPhotos) => {
-      const availableSlots = Math.max(8 - currentPhotos.length, 0);
+      const limitedCurrentPhotos = currentPhotos.slice(0, PHOTO_LIMIT);
+      const availableSlots = Math.max(PHOTO_LIMIT - limitedCurrentPhotos.length, 0);
       const acceptedFiles = selectedFiles.slice(0, availableSlots);
       const nextPhotos = [
-        ...currentPhotos,
+        ...limitedCurrentPhotos,
         ...acceptedFiles.map((file) => ({
           id: `${file.name}-${file.lastModified}-${crypto.randomUUID()}`,
           name: file.name,
@@ -369,15 +371,15 @@ export default function StartTribute() {
         })),
       ];
 
-      if (selectedFiles.length > availableSlots) {
-        setError("You can add up to 8 photos for now.");
+      if (currentPhotos.length > PHOTO_LIMIT || selectedFiles.length > availableSlots) {
+        setError(`You can add up to ${PHOTO_LIMIT} photos for now.`);
       }
 
       if (!primaryPhotoId && nextPhotos[0]) {
         setPrimaryPhotoId(nextPhotos[0].id);
       }
 
-      return nextPhotos;
+      return nextPhotos.slice(0, PHOTO_LIMIT);
     });
   }
 
@@ -432,6 +434,18 @@ export default function StartTribute() {
 
   function removeDraftTimelineEvent(eventId) {
     setTimelineEvents((current) => current.filter((event) => event.id !== eventId));
+  }
+
+  function choosePreviousBanner() {
+    const currentIndex = bannerPresets.findIndex((banner) => banner.id === form.bannerId);
+    const previousIndex = (currentIndex - 1 + bannerPresets.length) % bannerPresets.length;
+    updateField("bannerId", bannerPresets[previousIndex].id);
+  }
+
+  function chooseNextBanner() {
+    const currentIndex = bannerPresets.findIndex((banner) => banner.id === form.bannerId);
+    const nextIndex = (currentIndex + 1) % bannerPresets.length;
+    updateField("bannerId", bannerPresets[nextIndex].id);
   }
 
   function canContinueFromDetails() {
@@ -490,7 +504,7 @@ export default function StartTribute() {
 
       if (photos.length) {
         setSavingLabel("Uploading photos...");
-        await uploadTributePhotos(tribute.id, photos, primaryPhotoId || photos[0].id);
+        await uploadTributePhotos(tribute.id, photos.slice(0, PHOTO_LIMIT), primaryPhotoId || photos[0].id);
       }
 
       if (timelineEvents.length) {
@@ -562,7 +576,11 @@ export default function StartTribute() {
 
       </section>
 
-      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.8fr)] lg:items-start">
+      <section
+        className={`grid gap-5 lg:items-start ${
+          step < 3 ? "lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.8fr)]" : "lg:grid-cols-1"
+        }`}
+      >
 
         <form onSubmit={handleSubmit} className="rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft sm:p-8">
           {step === 1 && (
@@ -570,22 +588,32 @@ export default function StartTribute() {
               <p className="eyebrow">Photos</p>
               <h2 className="mt-3 text-2xl font-semibold tracking-tight text-ink">Add photos of your loved one</h2>
               <p className="mt-3 max-w-xl text-sm leading-6 text-ink/62">
-                Choose a few favorite moments for the gallery. After you upload them, tap the photo you want to use as the primary image at the top of the tribute.
+                A few meaningful photos can help bring their story to life.
               </p>
-              <div className="mt-5 rounded-2xl border border-rich-purple/10 bg-light-purple/35 px-4 py-3 text-sm leading-6 text-ink/68">
-                Start with one clear portrait if you have it. You can add up to 8 photos now and caption each one with a short memory.
-              </div>
 
-              <label className="mt-7 grid cursor-pointer place-items-center rounded-[2rem] border border-dashed border-ink/20 bg-cream px-5 py-12 text-center transition hover:bg-stone">
+              <label
+                className={`mt-7 grid place-items-center rounded-[2rem] border border-dashed px-5 py-12 text-center transition ${
+                  photos.length >= PHOTO_LIMIT
+                    ? "cursor-not-allowed border-ink/10 bg-stone text-ink/45"
+                    : "cursor-pointer border-ink/20 bg-cream hover:bg-stone"
+                }`}
+              >
                 <Camera className="text-deep-purple" size={34} />
-                <span className="mt-4 font-semibold text-ink">{photos.length ? "Add more photos to the gallery" : "Tap to add gallery photos"}</span>
+                <span className="mt-4 font-semibold text-ink">
+                  {photos.length >= PHOTO_LIMIT
+                    ? "Photo limit reached"
+                    : photos.length
+                      ? "Add more photos"
+                      : "Add photos"}
+                </span>
                 <span className="mt-2 max-w-sm text-sm leading-6 text-ink/55">
-                  You can choose one as the primary photo after upload. Up to 8 photos for now.
+                  Up to {PHOTO_LIMIT} images
                 </span>
                 <input
                   type="file"
                   accept="image/*"
                   multiple
+                  disabled={photos.length >= PHOTO_LIMIT}
                   className="sr-only"
                   onChange={handlePhotoSelection}
                 />
@@ -636,27 +664,47 @@ export default function StartTribute() {
               <div className="mt-7">
                 <p className="text-sm font-semibold text-ink/72">Choose a peaceful banner</p>
                 <p className="mt-2 text-sm leading-6 text-ink/55">This image sits behind the name and tribute message.</p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {bannerPresets.map((banner) => {
-                    const isSelected = form.bannerId === banner.id;
-
-                    return (
+                <div className="mt-3 overflow-hidden rounded-3xl border border-rich-purple/10 bg-cream shadow-sm">
+                  <div className="relative">
+                    <img src={selectedBanner.imageUrl} alt={selectedBanner.name} className="h-44 w-full object-cover sm:h-56" />
+                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-deep-purple/80 to-transparent p-4 text-white">
+                      <button
+                        type="button"
+                        onClick={choosePreviousBanner}
+                        className="grid size-10 place-items-center rounded-full border border-white/25 bg-white/15 backdrop-blur transition hover:bg-white/25"
+                        aria-label="Previous banner"
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
+                      <div className="text-center">
+                        <p className="text-sm font-semibold">{selectedBanner.name}</p>
+                        <p className="mt-1 text-xs text-white/72">
+                          {bannerPresets.findIndex((banner) => banner.id === form.bannerId) + 1} of {bannerPresets.length}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={chooseNextBanner}
+                        className="grid size-10 place-items-center rounded-full border border-white/25 bg-white/15 backdrop-blur transition hover:bg-white/25"
+                        aria-label="Next banner"
+                      >
+                        <ChevronRight size={20} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 px-4 py-3">
+                    {bannerPresets.map((banner) => (
                       <button
                         key={banner.id}
                         type="button"
                         onClick={() => updateField("bannerId", banner.id)}
-                        className={`overflow-hidden rounded-2xl border text-left transition ${
-                          isSelected ? "border-rich-purple ring-4 ring-rich-purple/15" : "border-ink/10 hover:border-rich-purple/40"
+                        className={`size-2.5 rounded-full transition ${
+                          form.bannerId === banner.id ? "bg-deep-purple" : "bg-rich-purple/20 hover:bg-rich-purple/40"
                         }`}
-                      >
-                        <img src={banner.imageUrl} alt={banner.name} className="h-28 w-full object-cover" />
-                        <span className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-ink">
-                          {banner.name}
-                          {isSelected && <Check className="text-deep-purple" size={17} />}
-                        </span>
-                      </button>
-                    );
-                  })}
+                        aria-label={`Choose ${banner.name}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -863,13 +911,21 @@ export default function StartTribute() {
                 publish.
               </p>
 
-              <div className="mt-6 rounded-3xl border border-rich-purple/10 bg-cream p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Tribute For</p>
-                <p className="mt-3 text-2xl font-semibold text-ink">{form.name || "Your tribute"}</p>
-                <p className="mt-1 text-ink/60">
-                {[form.birthYear, form.passingYear].filter(Boolean).join(" - ") || "Years can be added later"}
-                </p>
-              </div>
+              <FullTributeReview
+                name={previewName}
+                years={previewYears}
+                message={previewMessage}
+                story={form.story}
+                primaryPhoto={primaryPreviewPhoto}
+                photos={photos}
+                banner={selectedBanner}
+                favoriteSong={{
+                  title: form.songTitle,
+                  artist: form.songArtist,
+                  url: form.songUrl,
+                }}
+                timelineItems={timelinePreviewItems}
+              />
 
               <div className="mt-5 rounded-3xl border border-rich-purple/10 bg-white p-5 shadow-sm">
                 <p className="text-sm font-semibold text-ink">Choose visibility before publishing</p>
@@ -1045,38 +1101,6 @@ export default function StartTribute() {
                   )}
                 </div>
               </div>
-
-              <div className="mt-5 rounded-3xl bg-cream p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Banner Intro</p>
-                <p className="mt-2 line-clamp-4 leading-8 text-ink/70">{form.message}</p>
-              </div>
-              {form.story.trim() && (
-                <div className="mt-4 rounded-3xl border border-ink/10 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Full Story</p>
-                  <p className="mt-3 line-clamp-6 whitespace-pre-line leading-8 text-ink/70">{form.story}</p>
-                </div>
-              )}
-              {photos.length > 0 && (
-                <div className="mt-5 rounded-3xl border border-ink/10 p-4">
-                  <p className="text-sm font-semibold text-ink/60">Primary photo</p>
-                  <div className="mt-3 flex items-center gap-3">
-                    <img
-                      src={photos.find((photo) => photo.id === primaryPhotoId)?.previewUrl || photos[0].previewUrl}
-                      alt="Selected primary"
-                      className="size-16 rounded-2xl object-cover"
-                    />
-                    <p className="text-sm leading-6 text-ink/60">{photos.length} photo{photos.length === 1 ? "" : "s"} selected.</p>
-                  </div>
-                </div>
-              )}
-              {(form.songTitle || form.songArtist || form.songUrl) && (
-                <div className="mt-5 rounded-3xl border border-ink/10 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink/40">Favorite Song</p>
-                  <p className="mt-3 font-semibold text-ink">{form.songTitle || "Song added"}</p>
-                  {form.songArtist && <p className="mt-1 text-sm text-ink/60">by {form.songArtist}</p>}
-                  {form.songUrl && <p className="mt-2 break-all text-sm leading-6 text-ink/50">{form.songUrl}</p>}
-                </div>
-              )}
               <div className="mt-5 flex items-center gap-3 rounded-2xl border border-ink/10 px-4 py-3 text-sm text-ink/60">
                 <Check className="shrink-0 text-deep-purple" size={18} />
                 When you publish, EverTrace will create the tribute page and then show you the share link.
@@ -1105,45 +1129,54 @@ export default function StartTribute() {
                 {step === 1 && photos.length === 0 ? "Continue without photos" : "Continue"} <ArrowRight size={18} />
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={() => setShowPublishConfirm(true)}
-                disabled={saving}
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-deep-purple px-5 py-3 font-semibold text-white transition hover:bg-rich-purple disabled:cursor-not-allowed disabled:bg-deep-purple/45"
-              >
-                {saving ? savingLabel : "Publish Tribute"} <ArrowRight size={18} />
-              </button>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowPublishConfirm(true)}
+                  disabled={saving}
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-deep-purple px-5 py-3 font-semibold text-white transition hover:bg-rich-purple disabled:cursor-not-allowed disabled:bg-deep-purple/45"
+                >
+                  {saving ? savingLabel : "Publish Tribute"} <ArrowRight size={18} />
+                </button>
+                <p className="mt-3 text-center text-sm leading-6 text-ink/55">
+                  You can order the QR plaque on the next page.
+                </p>
+              </div>
             )}
           </div>
         </form>
 
-        <div className="lg:hidden">
-          <details className="rounded-[2rem] border border-rich-purple/10 bg-white p-4 shadow-soft">
-            <summary className="eyebrow cursor-pointer list-none">
-              Show preview
-            </summary>
-            <div className="mt-4">
+        {step < 3 && (
+          <>
+            <div className="lg:hidden">
+              <details className="rounded-[2rem] border border-rich-purple/10 bg-white p-4 shadow-soft">
+                <summary className="eyebrow cursor-pointer list-none">
+                  Show preview
+                </summary>
+                <div className="mt-4">
+                  <TributePreview
+                    name={previewName}
+                    years={previewYears}
+                    message={previewMessage}
+                    primaryPhoto={primaryPreviewPhoto}
+                    banner={selectedBanner}
+                    compact
+                  />
+                </div>
+              </details>
+            </div>
+
+            <aside className="hidden lg:sticky lg:top-24 lg:block">
               <TributePreview
                 name={previewName}
                 years={previewYears}
                 message={previewMessage}
                 primaryPhoto={primaryPreviewPhoto}
                 banner={selectedBanner}
-                compact
               />
-            </div>
-          </details>
-        </div>
-
-        <aside className="hidden lg:sticky lg:top-24 lg:block">
-          <TributePreview
-            name={previewName}
-            years={previewYears}
-            message={previewMessage}
-            primaryPhoto={primaryPreviewPhoto}
-            banner={selectedBanner}
-          />
-        </aside>
+            </aside>
+          </>
+        )}
       </section>
 
       {showPublishConfirm && (
@@ -1193,10 +1226,10 @@ export default function StartTribute() {
   );
 }
 
-function TributePreview({ name, years, message, primaryPhoto, banner, compact = false }) {
+function TributePreview({ name, years, message, primaryPhoto, banner, compact = false, label = "Preview" }) {
   return (
     <div className={compact ? "" : "rounded-[2rem] border border-rich-purple/10 bg-white p-4 shadow-soft"}>
-      {!compact && <p className="eyebrow px-2 pb-3">Preview</p>}
+      {!compact && label && <p className="eyebrow px-2 pb-3">{label}</p>}
       <div className="overflow-hidden rounded-[1.5rem] bg-deep-purple shadow-soft">
         <div className={`relative ${compact ? "min-h-[260px]" : "min-h-[420px]"}`}>
           <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover" />
@@ -1225,6 +1258,75 @@ function TributePreview({ name, years, message, primaryPhoto, banner, compact = 
         </div>
       </div>
     </div>
+  );
+}
+
+function FullTributeReview({ name, years, message, story, primaryPhoto, photos, banner, favoriteSong, timelineItems }) {
+  const hasSong = favoriteSong?.title || favoriteSong?.artist || favoriteSong?.url;
+
+  return (
+    <section className="mt-6 overflow-hidden rounded-[2rem] border border-rich-purple/10 bg-white shadow-soft">
+      <div className="p-4 sm:p-5">
+        <TributePreview name={name} years={years} message={message} primaryPhoto={primaryPhoto} banner={banner} label="" />
+
+        {story?.trim() && (
+          <section className="mt-5 rounded-3xl border border-ink/10 bg-cream p-5">
+            <p className="eyebrow">Their Story</p>
+            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">A life remembered together</h3>
+            <p className="mt-4 whitespace-pre-line leading-8 text-ink/70">{story}</p>
+          </section>
+        )}
+
+        {hasSong && (
+          <section className="mt-5 rounded-3xl border border-rich-purple/10 bg-white p-5 shadow-sm">
+            <p className="eyebrow">A Song They Loved</p>
+            {favoriteSong.title && <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">{favoriteSong.title}</h3>}
+            {favoriteSong.artist && <p className="mt-1 text-sm text-ink/60">by {favoriteSong.artist}</p>}
+            <p className="mt-3 text-sm leading-6 text-ink/65">
+              Press play to remember {name || "them"} with a song chosen in their honor.
+            </p>
+          </section>
+        )}
+
+        {timelineItems.length > 0 && (
+          <section className="mt-5 rounded-3xl border border-rich-purple/10 bg-white p-5 shadow-sm">
+            <p className="eyebrow">Life Timeline</p>
+            <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">Important moments</h3>
+            <div className="relative mt-5">
+              <div className="absolute bottom-3 left-5 top-3 w-px bg-rich-purple/18" />
+              <div className="space-y-4">
+                {timelineItems.map((item) => (
+                  <article key={item.id} className="relative grid grid-cols-[2.5rem_1fr] gap-3">
+                    <div className="relative z-10 grid size-10 place-items-center rounded-full border border-rich-purple/15 bg-cream text-deep-purple shadow-sm">
+                      <CalendarDays size={16} />
+                    </div>
+                    <div className="rounded-2xl border border-ink/10 bg-cream/70 p-4">
+                      <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-deep-purple shadow-sm">{item.year}</span>
+                      <h4 className="mt-3 font-semibold text-ink">{item.title}</h4>
+                      {item.description && <p className="mt-2 text-sm leading-6 text-ink/62">{item.description}</p>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {photos.length > 0 && (
+          <section className="mt-5 rounded-3xl border border-ink/10 bg-white p-5 shadow-sm">
+            <p className="eyebrow">Photo Gallery</p>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {photos.slice(0, 8).map((photo) => (
+                <figure key={photo.id} className="overflow-hidden rounded-2xl border border-ink/10 bg-cream">
+                  <img src={photo.previewUrl} alt={photo.caption || photo.name} className="aspect-square w-full object-cover" />
+                  {photo.caption && <figcaption className="px-3 py-2 text-xs leading-5 text-ink/62">{photo.caption}</figcaption>}
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+    </section>
   );
 }
 

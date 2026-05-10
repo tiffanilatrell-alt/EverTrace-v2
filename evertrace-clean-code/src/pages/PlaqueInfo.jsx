@@ -69,9 +69,11 @@ export default function PlaqueInfo() {
               disabled
               className="mt-7 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-deep-purple/45 px-5 font-semibold text-white sm:w-auto"
             >
-              <Sparkles size={18} /> Continue to plaque setup
+              <Sparkles size={18} /> Order from Creator Access
             </button>
-            <p className="mt-3 text-sm font-medium text-ink/50">Coming soon. Ordering is not connected yet.</p>
+            <p className="mt-3 text-sm font-medium text-ink/50">
+              Plaque ordering is available from the private creator link for this tribute.
+            </p>
           </div>
         </div>
       </section>
