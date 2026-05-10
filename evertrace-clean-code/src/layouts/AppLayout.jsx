@@ -50,7 +50,6 @@ export default function AppLayout() {
 
       <footer className="border-t border-ink/10 px-4 py-10 text-sm text-ink/60">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-center sm:text-left">EverTrace V2. Digital tributes first, QR plaques when the family is ready.</p>
           <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:justify-end">
             {footerLinks.map((link) =>
               link.to.startsWith("mailto") ? (
