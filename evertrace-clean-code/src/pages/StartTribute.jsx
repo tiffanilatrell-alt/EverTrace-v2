@@ -552,12 +552,12 @@ export default function StartTribute() {
   });
 
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-7xl flex-col justify-center px-4 py-8 sm:px-6">
-      <Link to="/" className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-ink/60">
+    <main className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-7xl flex-col px-3 py-5 sm:px-6 sm:py-8 lg:justify-center">
+      <Link to="/" className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-ink/60 sm:mb-8">
         <ArrowLeft size={16} /> Home
       </Link>
 
-      <section className="mb-6 rounded-2xl border border-rich-purple/10 bg-white/85 px-5 py-4 shadow-sm sm:px-6">
+      <section className="mb-5 rounded-2xl border border-rich-purple/10 bg-white/85 px-4 py-4 shadow-sm sm:mb-6 sm:px-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="eyebrow">Step {step} of 3</p>
@@ -577,28 +577,28 @@ export default function StartTribute() {
       </section>
 
       <section
-        className={`grid gap-5 lg:items-start ${
+        className={`grid min-w-0 gap-5 lg:items-start ${
           step < 3 ? "lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.8fr)]" : "lg:grid-cols-1"
         }`}
       >
 
-        <form onSubmit={handleSubmit} className="rounded-[2rem] border border-ink/10 bg-white p-6 shadow-soft sm:p-8">
+        <form onSubmit={handleSubmit} className="min-w-0 rounded-[1.5rem] border border-ink/10 bg-white p-4 shadow-soft sm:rounded-[2rem] sm:p-8">
           {step === 1 && (
             <div>
               <p className="eyebrow">Photos</p>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-ink">Add photos of your loved one</h2>
+              <h2 className="mt-3 text-[1.35rem] font-semibold tracking-tight text-ink sm:text-2xl">Add photos of your loved one</h2>
               <p className="mt-3 max-w-xl text-sm leading-6 text-ink/62">
                 A few meaningful photos can help bring their story to life.
               </p>
 
               <label
-                className={`mt-7 grid place-items-center rounded-[2rem] border border-dashed px-5 py-12 text-center transition ${
+                className={`mt-5 grid place-items-center rounded-[1.5rem] border border-dashed px-4 py-9 text-center transition sm:mt-7 sm:rounded-[2rem] sm:px-5 sm:py-12 ${
                   photos.length >= PHOTO_LIMIT
                     ? "cursor-not-allowed border-ink/10 bg-stone text-ink/45"
                     : "cursor-pointer border-ink/20 bg-cream hover:bg-stone"
                 }`}
               >
-                <Camera className="text-deep-purple" size={34} />
+                <Camera className="text-deep-purple" size={30} />
                 <span className="mt-4 font-semibold text-ink">
                   {photos.length >= PHOTO_LIMIT
                     ? "Photo limit reached"
@@ -620,7 +620,7 @@ export default function StartTribute() {
               </label>
 
               {photos.length > 0 && (
-                <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
                   {photos.map((photo) => {
                     const isPrimary = photo.id === primaryPhotoId;
 
@@ -664,14 +664,14 @@ export default function StartTribute() {
               <div className="mt-7">
                 <p className="text-sm font-semibold text-ink/72">Choose a peaceful banner</p>
                 <p className="mt-2 text-sm leading-6 text-ink/55">This image sits behind the name and tribute message.</p>
-                <div className="mt-3 overflow-hidden rounded-3xl border border-rich-purple/10 bg-cream shadow-sm">
+                <div className="mt-3 overflow-hidden rounded-[1.5rem] border border-rich-purple/10 bg-cream shadow-sm sm:rounded-3xl">
                   <div className="relative">
-                    <img src={selectedBanner.imageUrl} alt={selectedBanner.name} className="h-44 w-full object-cover sm:h-56" />
-                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-deep-purple/80 to-transparent p-4 text-white">
+                    <img src={selectedBanner.imageUrl} alt={selectedBanner.name} className="h-36 w-full object-cover sm:h-56" />
+                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-deep-purple/80 to-transparent p-3 text-white sm:p-4">
                       <button
                         type="button"
                         onClick={choosePreviousBanner}
-                        className="grid size-10 place-items-center rounded-full border border-white/25 bg-white/15 backdrop-blur transition hover:bg-white/25"
+                        className="grid size-9 place-items-center rounded-full border border-white/25 bg-white/15 backdrop-blur transition hover:bg-white/25 sm:size-10"
                         aria-label="Previous banner"
                       >
                         <ChevronLeft size={20} />
@@ -685,7 +685,7 @@ export default function StartTribute() {
                       <button
                         type="button"
                         onClick={chooseNextBanner}
-                        className="grid size-10 place-items-center rounded-full border border-white/25 bg-white/15 backdrop-blur transition hover:bg-white/25"
+                        className="grid size-9 place-items-center rounded-full border border-white/25 bg-white/15 backdrop-blur transition hover:bg-white/25 sm:size-10"
                         aria-label="Next banner"
                       >
                         <ChevronRight size={20} />
@@ -720,7 +720,7 @@ export default function StartTribute() {
                 required
               />
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <TextField
                   label="Birth date"
                   value={form.birthDate}
@@ -905,7 +905,7 @@ export default function StartTribute() {
           {step === 3 && (
             <div>
               <p className="eyebrow">Verification</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight">Review before going live</h2>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">Review before going live</h2>
               <p className="mt-3 max-w-2xl leading-7 text-ink/62">
                 Take a quiet moment to check the tribute. Nothing is published until you choose the visibility and press
                 publish.
@@ -971,7 +971,7 @@ export default function StartTribute() {
               </div>
 
               <div className="mt-5 overflow-hidden rounded-3xl border border-rich-purple/10 bg-white shadow-sm">
-                <div className="flex items-start justify-between gap-4 bg-light-purple/45 px-5 py-5">
+                <div className="flex items-start justify-between gap-3 bg-light-purple/45 px-4 py-4 sm:gap-4 sm:px-5 sm:py-5">
                   <div>
                     <p className="eyebrow">Life Timeline</p>
                     <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">Important dates</h3>
@@ -992,7 +992,7 @@ export default function StartTribute() {
                   )}
                 </div>
 
-                <div className="px-5 py-5">
+                <div className="px-4 py-4 sm:px-5 sm:py-5">
                   {timelinePreviewItems.length > 0 ? (
                     <div className="relative">
                       <div className="absolute bottom-3 left-5 top-3 w-px bg-rich-purple/18" />
@@ -1110,7 +1110,7 @@ export default function StartTribute() {
 
           {error && <p className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm leading-6 text-red-700">{error}</p>}
 
-          <div className="mt-7 grid gap-3 sm:grid-cols-[auto_1fr]">
+          <div className="mt-6 grid gap-3 sm:mt-7 sm:grid-cols-[auto_1fr]">
             {step > 1 && (
               <button
                 type="button"
@@ -1166,7 +1166,7 @@ export default function StartTribute() {
               </details>
             </div>
 
-            <aside className="hidden lg:sticky lg:top-24 lg:block">
+            <aside className="hidden min-w-0 lg:sticky lg:top-24 lg:block">
               <TributePreview
                 name={previewName}
                 years={previewYears}
@@ -1180,8 +1180,8 @@ export default function StartTribute() {
       </section>
 
       {showPublishConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-deep-purple/45 px-4 py-5 backdrop-blur-sm sm:items-center">
-          <section className="w-full max-w-lg rounded-[2rem] border border-white/50 bg-white p-5 shadow-soft sm:p-7">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-deep-purple/45 px-3 py-4 backdrop-blur-sm sm:items-center sm:px-4 sm:py-5">
+          <section className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-[1.5rem] border border-white/50 bg-white p-5 shadow-soft sm:rounded-[2rem] sm:p-7">
             <p className="eyebrow">Final Check</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">Ready to publish?</h2>
             <p className="mt-3 leading-7 text-ink/65">
@@ -1228,29 +1228,29 @@ export default function StartTribute() {
 
 function TributePreview({ name, years, message, primaryPhoto, banner, compact = false, label = "Preview" }) {
   return (
-    <div className={compact ? "" : "rounded-[2rem] border border-rich-purple/10 bg-white p-4 shadow-soft"}>
+    <div className={compact ? "" : "rounded-[1.5rem] border border-rich-purple/10 bg-white p-3 shadow-soft sm:rounded-[2rem] sm:p-4"}>
       {!compact && label && <p className="eyebrow px-2 pb-3">{label}</p>}
       <div className="overflow-hidden rounded-[1.5rem] bg-deep-purple shadow-soft">
-        <div className={`relative ${compact ? "min-h-[260px]" : "min-h-[420px]"}`}>
+        <div className={`relative ${compact ? "min-h-[240px] sm:min-h-[260px]" : "min-h-[350px] sm:min-h-[420px]"}`}>
           <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-deep-purple/90 via-deep-purple/35 to-deep-purple/10" />
           <div
             className={`relative grid gap-4 p-5 text-white ${
               compact
-                ? "min-h-[260px]"
+                ? "min-h-[240px] sm:min-h-[260px]"
                 : primaryPhoto
-                  ? "min-h-[420px] sm:grid-cols-[9rem_1fr] sm:items-end"
-                  : "min-h-[420px]"
+                  ? "min-h-[350px] sm:min-h-[420px] sm:grid-cols-[9rem_1fr] sm:items-end"
+                  : "min-h-[350px] sm:min-h-[420px]"
             }`}
           >
             {primaryPhoto && (
-              <div className={`${compact ? "hidden" : "mx-auto w-32 overflow-hidden rounded-[1.25rem] border border-white/25 bg-white/14 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full"}`}>
+              <div className={`${compact ? "hidden" : "mx-auto w-28 overflow-hidden rounded-[1.25rem] border border-white/25 bg-white/14 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full"}`}>
                 <img src={primaryPhoto.previewUrl} alt="Primary portrait preview" className="aspect-[4/5] w-full rounded-[0.9rem] object-cover object-[center_30%]" />
               </div>
             )}
             <div className="flex flex-col justify-end">
               <p className="eyebrow-light">In Loving Memory</p>
-              <h2 className={`${compact ? "text-2xl" : "text-3xl"} mt-2 font-semibold tracking-tight`}>{name}</h2>
+              <h2 className={`${compact ? "text-2xl" : "text-[1.7rem] sm:text-3xl"} mt-2 font-semibold tracking-tight`}>{name}</h2>
               <p className="mt-1 text-sm text-white/75">{years || "Years can be added later"}</p>
               <p className="mt-4 line-clamp-4 text-sm leading-6 text-white/82">{message}</p>
             </div>
@@ -1265,12 +1265,12 @@ function FullTributeReview({ name, years, message, story, primaryPhoto, photos, 
   const hasSong = favoriteSong?.title || favoriteSong?.artist || favoriteSong?.url;
 
   return (
-    <section className="mt-6 overflow-hidden rounded-[2rem] border border-rich-purple/10 bg-white shadow-soft">
-      <div className="p-4 sm:p-5">
+    <section className="mt-6 overflow-hidden rounded-[1.5rem] border border-rich-purple/10 bg-white shadow-soft sm:rounded-[2rem]">
+      <div className="p-3 sm:p-5">
         <TributePreview name={name} years={years} message={message} primaryPhoto={primaryPhoto} banner={banner} label="" />
 
         {story?.trim() && (
-          <section className="mt-5 rounded-3xl border border-ink/10 bg-cream p-5">
+          <section className="mt-4 rounded-[1.5rem] border border-ink/10 bg-cream p-4 sm:mt-5 sm:rounded-3xl sm:p-5">
             <p className="eyebrow">Their Story</p>
             <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">A life remembered together</h3>
             <p className="mt-4 whitespace-pre-line leading-8 text-ink/70">{story}</p>
@@ -1278,7 +1278,7 @@ function FullTributeReview({ name, years, message, story, primaryPhoto, photos, 
         )}
 
         {hasSong && (
-          <section className="mt-5 rounded-3xl border border-rich-purple/10 bg-white p-5 shadow-sm">
+          <section className="mt-4 rounded-[1.5rem] border border-rich-purple/10 bg-white p-4 shadow-sm sm:mt-5 sm:rounded-3xl sm:p-5">
             <p className="eyebrow">A Song They Loved</p>
             {favoriteSong.title && <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">{favoriteSong.title}</h3>}
             {favoriteSong.artist && <p className="mt-1 text-sm text-ink/60">by {favoriteSong.artist}</p>}
@@ -1289,7 +1289,7 @@ function FullTributeReview({ name, years, message, story, primaryPhoto, photos, 
         )}
 
         {timelineItems.length > 0 && (
-          <section className="mt-5 rounded-3xl border border-rich-purple/10 bg-white p-5 shadow-sm">
+          <section className="mt-4 rounded-[1.5rem] border border-rich-purple/10 bg-white p-4 shadow-sm sm:mt-5 sm:rounded-3xl sm:p-5">
             <p className="eyebrow">Life Timeline</p>
             <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">Important moments</h3>
             <div className="relative mt-5">
@@ -1313,7 +1313,7 @@ function FullTributeReview({ name, years, message, story, primaryPhoto, photos, 
         )}
 
         {photos.length > 0 && (
-          <section className="mt-5 rounded-3xl border border-ink/10 bg-white p-5 shadow-sm">
+          <section className="mt-4 rounded-[1.5rem] border border-ink/10 bg-white p-4 shadow-sm sm:mt-5 sm:rounded-3xl sm:p-5">
             <p className="eyebrow">Photo Gallery</p>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {photos.slice(0, 8).map((photo) => (

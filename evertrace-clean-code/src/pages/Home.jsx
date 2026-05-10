@@ -47,12 +47,12 @@ export default function Home() {
         <div className="absolute inset-0 bg-[url('/home-hero.jpg')] bg-cover bg-center" />
         <div className="absolute inset-0 bg-gradient-to-b from-deep-purple/78 via-deep-purple/58 to-rich-purple/72" />
         <div className="absolute inset-0 bg-ink/20" />
-        <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl flex-col items-center justify-center px-4 py-20 text-center text-white sm:px-6">
+        <div className="relative mx-auto flex min-h-[calc(100svh-7.25rem)] max-w-5xl flex-col items-center justify-center px-3 py-16 text-center text-white sm:min-h-[calc(100vh-4rem)] sm:px-6 sm:py-20">
           <div className="grid size-14 place-items-center rounded-full border border-white/20 bg-white/10 backdrop-blur">
             <Leaf size={26} />
           </div>
           <p className="eyebrow-light mt-8">EverTrace Memorials</p>
-          <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
+          <h1 className="mt-5 max-w-4xl text-[2.65rem] font-semibold leading-[1.04] tracking-tight sm:text-6xl lg:text-7xl">
             Every life leaves trace, we help you preserve it.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-white/82 sm:text-xl">
@@ -75,7 +75,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+      <section className="mx-auto max-w-6xl px-3 py-12 sm:px-6 sm:py-16">
         <div className="text-center">
           <p className="eyebrow">How it Works</p>
           <h2 className="mt-3 text-4xl font-semibold tracking-tight text-ink">A gentle path from memory to legacy</h2>
@@ -94,7 +94,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
+      <section className="mx-auto max-w-6xl px-3 pb-14 sm:px-6 sm:pb-16">
         <div className="grid gap-4 md:grid-cols-3">
           {teaserCards.map((card) => (
             <Link
@@ -113,7 +113,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-6 px-4 pb-16 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+      <section className="mx-auto grid max-w-6xl gap-6 px-3 pb-14 sm:px-6 sm:pb-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
         <div>
           <p className="eyebrow">Example Tribute</p>
           <h2 className="mt-3 text-4xl font-semibold tracking-tight text-ink">See how a finished tribute can feel</h2>
@@ -129,20 +129,20 @@ export default function Home() {
         </div>
 
         <div className="rounded-2xl border border-rich-purple/10 bg-white p-4 shadow-soft">
-          <div className="relative min-h-[420px] overflow-hidden rounded-2xl bg-deep-purple p-5 text-white">
+          <div className="relative min-h-[340px] overflow-hidden rounded-2xl bg-deep-purple p-4 text-white sm:min-h-[420px] sm:p-5">
             <img src="/peace-banner.png" alt="Peaceful tribute banner" className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(45,27,78,0.75),rgba(45,27,78,0.55))]" />
-            <div className="relative flex min-h-[380px] flex-col justify-end">
+            <div className="relative flex min-h-[308px] flex-col justify-end sm:min-h-[380px]">
               <p className="eyebrow-light">Example Tribute</p>
-              <div className="mt-5 flex items-end gap-4">
+              <div className="mt-4 flex items-end gap-3 sm:mt-5 sm:gap-4">
                 <img
                   src="/example-primary.png"
                   alt="Jean E. White"
-                  className="h-32 w-24 shrink-0 rounded-[1.25rem] border border-white/25 object-cover object-[center_30%] p-1"
+                  className="h-28 w-20 shrink-0 rounded-[1.25rem] border border-white/25 object-cover object-[center_30%] p-1 sm:h-32 sm:w-24"
                 />
                 <div>
                   <p className="eyebrow-light">In Loving Memory</p>
-                  <h3 className="mt-2 text-4xl font-semibold">Jean E. White</h3>
+                  <h3 className="mt-2 text-3xl font-semibold sm:text-4xl">Jean E. White</h3>
                   <p className="mt-2 text-white/82">1950 - 2005</p>
                 </div>
               </div>
@@ -167,7 +167,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+      <section className="mx-auto max-w-6xl px-3 pb-16 sm:px-6 sm:pb-20">
         <div className="grid gap-6 rounded-2xl border border-rich-purple/10 bg-light-purple p-6 shadow-soft sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
             <p className="eyebrow">Memorial Plaques</p>

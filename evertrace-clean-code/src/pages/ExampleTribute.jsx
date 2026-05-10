@@ -150,21 +150,21 @@ export default function ExampleTribute() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <main className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
       <section className="overflow-hidden rounded-[2rem] border border-ink/10 bg-white shadow-soft">
-        <div className="relative min-h-[420px] overflow-hidden bg-deep-purple p-5 text-white sm:p-7">
+        <div className="relative min-h-[360px] overflow-hidden bg-deep-purple p-4 text-white sm:min-h-[420px] sm:p-7">
           <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover object-center" />
           <div className="absolute inset-0 bg-[linear-gradient(rgba(45,27,78,0.75),rgba(45,27,78,0.55))]" />
-          <p className="eyebrow-light absolute right-6 top-6 z-10 sm:right-8 sm:top-8">Example Tribute</p>
-          <div className="relative grid min-h-[376px] gap-6 pt-12 sm:grid-cols-[15rem_1fr] sm:items-end sm:pt-10 lg:grid-cols-[17rem_1fr]">
-            <div className="mx-auto w-44 overflow-hidden rounded-[1.5rem] border border-white/25 bg-white/14 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full">
+          <p className="eyebrow-light absolute right-4 top-4 z-10 sm:right-8 sm:top-8">Example Tribute</p>
+          <div className="relative grid min-h-[328px] gap-5 pt-12 sm:min-h-[376px] sm:grid-cols-[15rem_1fr] sm:items-end sm:gap-6 sm:pt-10 lg:grid-cols-[17rem_1fr]">
+            <div className="mx-auto w-36 overflow-hidden rounded-[1.5rem] border border-white/25 bg-white/14 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full">
               <img src="/example-primary.png" alt="Jean E. White" className="aspect-[4/5] w-full rounded-[1.1rem] object-cover object-[center_30%]" />
             </div>
             <div className="flex flex-col justify-end">
               <p className="eyebrow-light">In Loving Memory</p>
-              <h1 className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">Jean E. White</h1>
+              <h1 className="mt-4 text-[2.35rem] font-semibold tracking-tight sm:text-6xl">Jean E. White</h1>
               <p className="mt-3 text-lg text-white/80">1950 - 2005</p>
-              <p className="mt-6 line-clamp-4 max-w-2xl text-lg leading-8 text-white/85">
+              <p className="mt-5 line-clamp-4 max-w-2xl text-base leading-7 text-white/85 sm:mt-6 sm:text-lg sm:leading-8">
                 To know Jean was to feel remembered. She had a quiet confidence and a thoughtful way of speaking, and somehow she always made you believe in yourself. She was my mom. ~Tiffani Latrell
               </p>
             </div>
@@ -204,7 +204,7 @@ export default function ExampleTribute() {
           </div>
         </div>
 
-        <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_18rem]">
+        <div className="grid min-w-0 gap-6 p-4 sm:p-8 lg:grid-cols-[1fr_18rem]">
           <section>
             <p className="eyebrow">Their Story</p>
             <h2 className="mt-3 text-3xl font-semibold">A life remembered together</h2>

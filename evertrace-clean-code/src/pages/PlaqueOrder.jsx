@@ -75,8 +75,8 @@ export default function PlaqueOrder() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <Link to={`/plaques/${tributeId}`} className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-ink/60">
+    <main className="mx-auto max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
+      <Link to={`/plaques/${tributeId}`} className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-ink/60 sm:mb-8">
         <ArrowLeft size={16} /> Back to plaque details
       </Link>
 
@@ -104,10 +104,10 @@ export default function PlaqueOrder() {
       )}
 
       {accessState === "allowed" && (
-      <section className="grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(24rem,0.7fr)] lg:items-start">
-        <form onSubmit={(event) => event.preventDefault()} className="rounded-[2rem] border border-ink/10 bg-white p-5 shadow-soft sm:p-8">
+      <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(24rem,0.7fr)] lg:items-start">
+        <form onSubmit={(event) => event.preventDefault()} className="min-w-0 rounded-[1.5rem] border border-ink/10 bg-white p-4 shadow-soft sm:rounded-[2rem] sm:p-8">
           <p className="eyebrow">Plaque Setup</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">Order a memorial plaque</h1>
+          <h1 className="mt-3 text-[2rem] font-semibold tracking-tight sm:text-5xl">Order a memorial plaque</h1>
           <p className="mt-4 max-w-2xl leading-8 text-ink/65">
             The tribute stays digital-first. When Stripe checkout is connected, this page will send the tribute details
             to checkout so EverTrace can assign and link a physical QR plaque after payment.
@@ -229,7 +229,7 @@ export default function PlaqueOrder() {
           <p className="mt-3 text-sm font-medium text-ink/50">Checkout is not connected yet.</p>
         </form>
 
-        <aside className="rounded-[2rem] border border-rich-purple/10 bg-white p-5 shadow-soft lg:sticky lg:top-24">
+        <aside className="min-w-0 rounded-[1.5rem] border border-rich-purple/10 bg-white p-4 shadow-soft sm:rounded-[2rem] sm:p-5 lg:sticky lg:top-24">
           <div className="overflow-hidden rounded-[1.5rem] bg-ink text-white">
             <img
               src="/qrCodeInBox.jpg"

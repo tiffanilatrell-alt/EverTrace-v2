@@ -302,26 +302,26 @@ export default function TributePage() {
   const banner = tribute.bannerUrl ? { imageUrl: tribute.bannerUrl, name: "Tribute banner" } : getBannerById(tribute.bannerId || defaultBanner.id);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <main className="mx-auto max-w-5xl px-3 py-5 sm:px-6 sm:py-8">
       <section className="overflow-hidden rounded-[2rem] border border-ink/10 bg-white shadow-soft">
-        <div className="relative min-h-[420px] overflow-hidden bg-deep-purple p-5 text-white sm:p-7">
+        <div className="relative min-h-[360px] overflow-hidden bg-deep-purple p-4 text-white sm:min-h-[420px] sm:p-7">
           <img src={banner.imageUrl} alt={banner.name} className="absolute inset-0 h-full w-full object-cover object-center" />
           <div className="absolute inset-0 bg-[linear-gradient(rgba(45,27,78,0.75),rgba(45,27,78,0.55))]" />
           <div
-            className={`relative grid min-h-[376px] gap-6 pt-10 ${
+            className={`relative grid min-h-[328px] gap-5 pt-10 sm:min-h-[376px] sm:gap-6 ${
               tribute.primaryPhotoUrl ? "sm:grid-cols-[15rem_1fr] sm:items-end lg:grid-cols-[17rem_1fr]" : ""
             }`}
           >
             {tribute.primaryPhotoUrl && (
-              <div className="mx-auto w-44 overflow-hidden rounded-[1.5rem] border border-white/25 bg-white/14 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full">
+              <div className="mx-auto w-36 overflow-hidden rounded-[1.5rem] border border-white/25 bg-white/14 p-1.5 shadow-soft backdrop-blur sm:mx-0 sm:w-full">
                 <img src={tribute.primaryPhotoUrl} alt={tribute.name} className="aspect-[4/5] w-full rounded-[1.1rem] object-cover object-[center_30%]" />
               </div>
             )}
             <div className="flex flex-col justify-end">
               <p className="eyebrow-light">In Loving Memory</p>
-              <h1 className="mt-4 text-5xl font-semibold tracking-tight sm:text-6xl">{tribute.name}</h1>
+              <h1 className="mt-4 text-[2.35rem] font-semibold tracking-tight sm:text-6xl">{tribute.name}</h1>
               {years && <p className="mt-3 text-lg text-white/80">{years}</p>}
-              <p className="mt-6 line-clamp-4 max-w-2xl text-lg leading-8 text-white/85">{tribute.message}</p>
+              <p className="mt-5 line-clamp-4 max-w-2xl text-base leading-7 text-white/85 sm:mt-6 sm:text-lg sm:leading-8">{tribute.message}</p>
             </div>
           </div>
         </div>
@@ -365,7 +365,7 @@ export default function TributePage() {
           </p>
         </div>
 
-        <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[1fr_18rem]">
+        <div className="grid min-w-0 gap-6 p-4 sm:p-8 lg:grid-cols-[1fr_18rem]">
           <section>
             <p className="eyebrow">Their Story</p>
             <h2 className="mt-3 text-3xl font-semibold">A life remembered together</h2>

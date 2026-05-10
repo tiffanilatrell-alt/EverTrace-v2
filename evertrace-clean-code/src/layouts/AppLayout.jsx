@@ -1,4 +1,4 @@
-import { Leaf, Menu } from "lucide-react";
+import { Leaf } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 
 const navItems = [
@@ -20,7 +20,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-cream text-ink">
       <header className="sticky top-0 z-20 border-b border-ink/10 bg-cream/90 backdrop-blur">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-3 px-3 py-3 sm:h-16 sm:flex-nowrap sm:px-6 sm:py-0">
           <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
             <span className="grid size-9 place-items-center rounded-full bg-deep-purple text-white">
               <Leaf size={17} fill="currentColor" />
@@ -28,13 +28,13 @@ export default function AppLayout() {
             <span>EverTrace</span>
           </Link>
 
-          <nav className="hidden items-center gap-1 rounded-full border border-rich-purple/35 bg-white/70 p-1 text-sm font-medium sm:flex">
+          <nav className="order-3 mt-3 flex w-full items-center justify-center gap-1 rounded-full border border-rich-purple/35 bg-white/70 p-1 text-sm font-medium sm:order-none sm:mt-0 sm:w-auto">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `rounded-full px-4 py-2 transition ${
+                  `flex-1 rounded-full px-3 py-2 text-center transition sm:flex-none sm:px-4 ${
                     isActive ? "bg-deep-purple text-white" : "text-ink/70 hover:bg-rich-purple/5 hover:text-ink"
                   }`
                 }
@@ -43,10 +43,6 @@ export default function AppLayout() {
               </NavLink>
             ))}
           </nav>
-
-          <button className="grid size-10 place-items-center rounded-full border border-rich-purple/35 bg-white/70 text-ink sm:hidden">
-            <Menu size={20} />
-          </button>
         </div>
       </header>
 

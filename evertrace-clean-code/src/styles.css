@@ -22,11 +22,30 @@
 
 html {
   scroll-behavior: smooth;
+  width: 100%;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
 }
 
 button,
