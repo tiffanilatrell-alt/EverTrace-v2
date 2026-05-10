@@ -520,6 +520,25 @@ export default function StartTribute() {
         );
       }
 
+      // --- Send Resend email with private link ---
+      const tributeUrl = `${window.location.origin}/tribute/${tribute.id}`;
+      try {
+        await fetch("/api/send-private-link", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: cleanedForm.email,
+            lovedOneName: cleanedForm.name,
+            tributeUrl,
+          }),
+        });
+      } catch (emailError) {
+        console.warn("Tribute created, but email failed:", emailError);
+      }
+      // --- End Resend email ---
+
       navigate(`/published/${tribute.id}?manageToken=${tribute.manageToken}&visibility=${cleanedForm.visibility}`);
     } catch (err) {
       setError("We could not create the tribute yet. Please check your Firebase setup and storage rules, then try again.");
