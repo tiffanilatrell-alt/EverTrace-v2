@@ -1,4 +1,4 @@
-import { Check, Copy, ExternalLink, QrCode, Share2 } from "lucide-react";
+import { Check, Copy, ExternalLink, Share2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
@@ -14,6 +14,7 @@ export default function PublishSuccess() {
   const isPrivate = visibility === "private";
   const tributePath = `/tribute/${tributeId}`;
   const managePath = manageToken ? `/manage/${tributeId}?token=${manageToken}` : "";
+  const plaqueOrderPath = manageToken ? `/plaques/${tributeId}/order?token=${manageToken}` : `/plaques/${tributeId}`;
   const tributeUrl = typeof window === "undefined" ? tributePath : `${window.location.origin}${tributePath}`;
   const manageUrl = managePath && typeof window !== "undefined" ? `${window.location.origin}${managePath}` : managePath;
 
@@ -75,20 +76,6 @@ export default function PublishSuccess() {
             : shareText}
         </p>
 
-        <div className="mt-7 rounded-3xl border border-rich-purple/15 bg-light-purple/30 p-5">
-          <p className="text-sm font-semibold text-ink">Visibility: {isPrivate ? "Private" : "Public"}</p>
-          <p className="mt-2 leading-7 text-ink/65">
-            {isPrivate
-              ? "Only people with this link can view the tribute. You can share it privately with family now."
-              : "This tribute is ready to be shared more openly with family and friends."}
-          </p>
-          {isPrivate && (
-            <p className="mt-2 text-sm leading-6 text-ink/55">
-              You can make it public later from your private creator link.
-            </p>
-          )}
-        </div>
-
         <div className="mt-7 rounded-3xl bg-cream p-4">
           <p className="text-sm font-semibold text-ink/55">Tribute link</p>
           <p className="mt-2 break-all rounded-2xl bg-white px-4 py-3 text-sm leading-6 text-ink/70">{tributeUrl}</p>
@@ -110,6 +97,32 @@ export default function PublishSuccess() {
           >
             <Copy size={18} /> Copy Link
           </button>
+        </div>
+
+        <div className="mt-7 grid overflow-hidden rounded-[2rem] border border-rich-purple/15 bg-white shadow-soft sm:grid-cols-2">
+          <div className="bg-ink/5 p-3 sm:p-4">
+            <img
+              src="/hand-scanning-2.jpg"
+              alt="EverTrace QR memorial plaque being scanned"
+              className="mx-auto max-h-[28rem] w-full rounded-[1.4rem] object-contain"
+            />
+          </div>
+          <div className="bg-gradient-to-br from-light-purple/55 to-white p-5 sm:flex sm:flex-col sm:justify-center sm:p-6">
+            <p className="eyebrow">QR Memorial Plaque</p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+              Preserve this tribute in the real world
+            </h2>
+            <p className="mt-3 leading-7 text-ink/65">
+              Turn this page into a lasting doorway family can scan from a gravesite, urn space, memorial garden, or
+              keepsake.
+            </p>
+            <Link
+              to={plaqueOrderPath}
+              className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-deep-purple px-5 font-semibold text-white transition hover:bg-rich-purple sm:w-auto"
+            >
+              Order QR Memorial Plaque
+            </Link>
+          </div>
         </div>
 
         <Link
@@ -145,13 +158,6 @@ export default function PublishSuccess() {
           </div>
         )}
 
-        <div className="mt-7 rounded-3xl border border-ink/10 p-5">
-          <QrCode className="text-deep-purple" size={24} />
-          <p className="mt-3 font-semibold">Preserve it later</p>
-          <p className="mt-2 leading-7 text-ink/65">
-            When this tribute is ready, you can preserve it with a lasting QR memorial plaque.
-          </p>
-        </div>
       </section>
     </main>
   );

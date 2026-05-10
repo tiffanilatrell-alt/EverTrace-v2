@@ -915,9 +915,12 @@ export default function StartTribute() {
                 name={previewName}
                 years={previewYears}
                 message={previewMessage}
+                form={form}
+                onFieldChange={updateField}
                 story={form.story}
                 primaryPhoto={primaryPreviewPhoto}
                 photos={photos}
+                onPhotoCaptionChange={updatePhotoCaption}
                 banner={selectedBanner}
                 favoriteSong={{
                   title: form.songTitle,
@@ -925,6 +928,12 @@ export default function StartTribute() {
                   url: form.songUrl,
                 }}
                 timelineItems={timelinePreviewItems}
+                timelineForm={timelineForm}
+                setTimelineForm={setTimelineForm}
+                isTimelineFormOpen={isTimelineFormOpen}
+                setIsTimelineFormOpen={setIsTimelineFormOpen}
+                addDraftTimelineEvent={addDraftTimelineEvent}
+                removeDraftTimelineEvent={removeDraftTimelineEvent}
               />
 
               <div className="mt-5 rounded-3xl border border-rich-purple/10 bg-white p-5 shadow-sm">
@@ -970,137 +979,6 @@ export default function StartTribute() {
                 </div>
               </div>
 
-              <div className="mt-5 overflow-hidden rounded-3xl border border-rich-purple/10 bg-white shadow-sm">
-                <div className="flex items-start justify-between gap-3 bg-light-purple/45 px-4 py-4 sm:gap-4 sm:px-5 sm:py-5">
-                  <div>
-                    <p className="eyebrow">Life Timeline</p>
-                    <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">Important dates</h3>
-                    <p className="mt-2 text-sm leading-6 text-ink/60">
-                      Birth and passing dates are added automatically. You can add another meaningful date now, or skip
-                      this for later.
-                    </p>
-                  </div>
-                  {!isTimelineFormOpen && (
-                    <button
-                      type="button"
-                      onClick={() => setIsTimelineFormOpen(true)}
-                      className="grid size-11 shrink-0 place-items-center rounded-full bg-deep-purple text-white shadow-sm transition hover:bg-rich-purple"
-                      aria-label="Add an important date"
-                    >
-                      <Plus size={20} />
-                    </button>
-                  )}
-                </div>
-
-                <div className="px-4 py-4 sm:px-5 sm:py-5">
-                  {timelinePreviewItems.length > 0 ? (
-                    <div className="relative">
-                      <div className="absolute bottom-3 left-5 top-3 w-px bg-rich-purple/18" />
-                      <div className="space-y-4">
-                        {timelinePreviewItems.map((item) => (
-                          <article key={item.id} className="relative grid grid-cols-[2.5rem_1fr] gap-3">
-                            <div className="relative z-10 grid size-10 place-items-center rounded-full border border-rich-purple/15 bg-cream text-deep-purple shadow-sm">
-                              <CalendarDays size={16} />
-                            </div>
-                            <div className="rounded-2xl border border-ink/10 bg-cream/70 p-4">
-                              <div className="flex flex-wrap items-center justify-between gap-2">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-deep-purple shadow-sm">
-                                    {item.year}
-                                  </span>
-                                  {item.generated && (
-                                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-ink/35">
-                                      Auto
-                                    </span>
-                                  )}
-                                </div>
-                                {!item.generated && (
-                                  <button
-                                    type="button"
-                                    onClick={() => removeDraftTimelineEvent(item.id)}
-                                    className="grid size-8 place-items-center rounded-full bg-white text-ink/50 transition hover:bg-stone"
-                                    aria-label={`Remove ${item.title}`}
-                                  >
-                                    <X size={15} />
-                                  </button>
-                                )}
-                              </div>
-                              <h4 className="mt-3 font-semibold text-ink">{item.title}</h4>
-                              {item.description && <p className="mt-2 text-sm leading-6 text-ink/62">{item.description}</p>}
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-dashed border-rich-purple/20 bg-cream p-4 text-sm leading-6 text-ink/60">
-                      Add birth and passing dates, or add an important date below, to begin the timeline.
-                    </div>
-                  )}
-
-                  {isTimelineFormOpen ? (
-                    <div className="mt-5 rounded-3xl border border-rich-purple/15 bg-light-purple/40 p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-sm font-semibold text-deep-purple">Add an important date</p>
-                          <p className="mt-1 text-sm leading-6 text-ink/60">
-                            A wedding, move, milestone, favorite chapter, or family moment.
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setTimelineForm(initialTimelineForm);
-                            setIsTimelineFormOpen(false);
-                          }}
-                          className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-ink/60 transition hover:bg-cream"
-                          aria-label="Cancel timeline entry"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-[9rem_1fr]">
-                        <input
-                          value={timelineForm.year}
-                          onChange={(event) => setTimelineForm((current) => ({ ...current, year: event.target.value }))}
-                          placeholder="Year or date"
-                          inputMode="numeric"
-                          className="min-h-12 rounded-full border border-ink/10 bg-white px-4 outline-none focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
-                        />
-                        <input
-                          value={timelineForm.title}
-                          onChange={(event) => setTimelineForm((current) => ({ ...current, title: event.target.value }))}
-                          placeholder="What happened?"
-                          className="min-h-12 rounded-full border border-ink/10 bg-white px-4 outline-none focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
-                        />
-                      </div>
-                      <textarea
-                        value={timelineForm.description}
-                        onChange={(event) => setTimelineForm((current) => ({ ...current, description: event.target.value }))}
-                        placeholder="Add a few details, if you want."
-                        rows={3}
-                        className="mt-3 w-full resize-none rounded-3xl border border-ink/10 bg-white px-4 py-3 leading-7 outline-none focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
-                      />
-                      <button
-                        type="button"
-                        onClick={addDraftTimelineEvent}
-                        disabled={!timelineForm.year.trim() || !timelineForm.title.trim()}
-                        className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-deep-purple px-5 font-semibold text-white transition hover:bg-rich-purple disabled:cursor-not-allowed disabled:bg-deep-purple/40 sm:w-auto"
-                      >
-                        Add to Timeline
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setIsTimelineFormOpen(true)}
-                      className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-rich-purple/25 bg-white px-5 text-sm font-semibold text-deep-purple transition hover:bg-light-purple sm:w-auto"
-                    >
-                      <Plus size={16} /> Add an important date
-                    </button>
-                  )}
-                </div>
-              </div>
               <div className="mt-5 flex items-center gap-3 rounded-2xl border border-ink/10 px-4 py-3 text-sm text-ink/60">
                 <Check className="shrink-0 text-deep-purple" size={18} />
                 When you publish, EverTrace will create the tribute page and then show you the share link.
@@ -1261,7 +1139,26 @@ function TributePreview({ name, years, message, primaryPhoto, banner, compact = 
   );
 }
 
-function FullTributeReview({ name, years, message, story, primaryPhoto, photos, banner, favoriteSong, timelineItems }) {
+function FullTributeReview({
+  name,
+  years,
+  message,
+  form,
+  onFieldChange,
+  story,
+  primaryPhoto,
+  photos,
+  onPhotoCaptionChange,
+  banner,
+  favoriteSong,
+  timelineItems,
+  timelineForm,
+  setTimelineForm,
+  isTimelineFormOpen,
+  setIsTimelineFormOpen,
+  addDraftTimelineEvent,
+  removeDraftTimelineEvent,
+}) {
   const hasSong = favoriteSong?.title || favoriteSong?.artist || favoriteSong?.url;
 
   return (
@@ -1269,29 +1166,63 @@ function FullTributeReview({ name, years, message, story, primaryPhoto, photos, 
       <div className="p-3 sm:p-5">
         <TributePreview name={name} years={years} message={message} primaryPhoto={primaryPhoto} banner={banner} label="" />
 
-        {story?.trim() && (
-          <section className="mt-4 rounded-[1.5rem] border border-ink/10 bg-cream p-4 sm:mt-5 sm:rounded-3xl sm:p-5">
-            <p className="eyebrow">Their Story</p>
-            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">A life remembered together</h3>
-            <p className="mt-4 whitespace-pre-line leading-8 text-ink/70">{story}</p>
-          </section>
-        )}
+        <section className="mt-4 rounded-[1.5rem] border border-rich-purple/10 bg-white p-4 shadow-sm sm:mt-5 sm:rounded-3xl sm:p-5">
+          <p className="eyebrow">Final edits</p>
+          <p className="mt-2 text-sm leading-6 text-ink/58">Make any last tweaks here. Nothing saves until you publish.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <TextField label="Loved one's name" value={form.name} onChange={(value) => onFieldChange("name", value)} placeholder="Their name" required />
+            <div className="grid grid-cols-2 gap-3">
+              <TextField label="Birth date" value={form.birthDate} onChange={(value) => onFieldChange("birthDate", value)} placeholder="MM/DD/YYYY" inputMode="numeric" maxLength={10} />
+              <TextField label="Passing date" value={form.passingDate} onChange={(value) => onFieldChange("passingDate", value)} placeholder="MM/DD/YYYY" inputMode="numeric" maxLength={10} />
+            </div>
+          </div>
+          <label className="mt-4 block">
+            <span className="text-sm font-semibold text-ink/72">Banner Intro</span>
+            <textarea
+              value={form.message}
+              onChange={(event) => onFieldChange("message", event.target.value)}
+              placeholder="This appears in the banner. Keep it to four lines so it fits beautifully."
+              rows={4}
+              maxLength={280}
+              className="mt-2 w-full resize-none rounded-3xl border border-ink/10 bg-cream px-4 py-4 leading-7 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:bg-white focus:ring-4 focus:ring-rich-purple/10"
+              required
+            />
+          </label>
+        </section>
 
-        {hasSong && (
-          <section className="mt-4 rounded-[1.5rem] border border-rich-purple/10 bg-white p-4 shadow-sm sm:mt-5 sm:rounded-3xl sm:p-5">
-            <p className="eyebrow">A Song They Loved</p>
-            {favoriteSong.title && <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">{favoriteSong.title}</h3>}
-            {favoriteSong.artist && <p className="mt-1 text-sm text-ink/60">by {favoriteSong.artist}</p>}
+        <section className="mt-4 rounded-[1.5rem] border border-ink/10 bg-cream p-4 sm:mt-5 sm:rounded-3xl sm:p-5">
+          <p className="eyebrow">Their Story</p>
+          <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">A life remembered together</h3>
+          <textarea
+            value={story}
+            onChange={(event) => onFieldChange("story", event.target.value)}
+            placeholder="Tell the fuller story here."
+            rows={8}
+            className="mt-4 w-full resize-none rounded-3xl border border-ink/10 bg-white px-4 py-4 leading-8 text-ink/70 outline-none transition placeholder:text-ink/35 focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
+            required
+          />
+        </section>
+
+        <section className="mt-4 rounded-[1.5rem] border border-rich-purple/10 bg-white p-4 shadow-sm sm:mt-5 sm:rounded-3xl sm:p-5">
+          <p className="eyebrow">A Song They Loved</p>
+          <p className="mt-2 text-sm leading-6 text-ink/58">Optional. Add or revise the song that should appear on the tribute.</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <TextField label="Song title" value={form.songTitle} onChange={(value) => onFieldChange("songTitle", value)} placeholder="Song title" />
+            <TextField label="Artist" value={form.songArtist} onChange={(value) => onFieldChange("songArtist", value)} placeholder="Artist" />
+            <TextField label="Song link" type="url" value={form.songUrl} onChange={(value) => onFieldChange("songUrl", value)} placeholder="Spotify, YouTube, Apple Music..." />
+          </div>
+          {hasSong && (
             <p className="mt-3 text-sm leading-6 text-ink/65">
-              Press play to remember {name || "them"} with a song chosen in their honor.
+              This will invite people to remember {name || "them"} with a song chosen in their honor.
             </p>
-          </section>
-        )}
+          )}
+        </section>
 
-        {timelineItems.length > 0 && (
-          <section className="mt-4 rounded-[1.5rem] border border-rich-purple/10 bg-white p-4 shadow-sm sm:mt-5 sm:rounded-3xl sm:p-5">
-            <p className="eyebrow">Life Timeline</p>
-            <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">Important moments</h3>
+        <section className="mt-4 rounded-[1.5rem] border border-rich-purple/10 bg-white p-4 shadow-sm sm:mt-5 sm:rounded-3xl sm:p-5">
+          <p className="eyebrow">Life Timeline</p>
+          <h3 className="mt-2 text-2xl font-semibold tracking-tight text-ink">Important moments</h3>
+          <p className="mt-2 text-sm leading-6 text-ink/58">Birth and passing dates are automatic. Add meaningful dates if you want.</p>
+          {timelineItems.length > 0 ? (
             <div className="relative mt-5">
               <div className="absolute bottom-3 left-5 top-3 w-px bg-rich-purple/18" />
               <div className="space-y-4">
@@ -1301,7 +1232,19 @@ function FullTributeReview({ name, years, message, story, primaryPhoto, photos, 
                       <CalendarDays size={16} />
                     </div>
                     <div className="rounded-2xl border border-ink/10 bg-cream/70 p-4">
-                      <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-deep-purple shadow-sm">{item.year}</span>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-deep-purple shadow-sm">{item.year}</span>
+                        {!item.generated && (
+                          <button
+                            type="button"
+                            onClick={() => removeDraftTimelineEvent(item.id)}
+                            className="grid size-8 place-items-center rounded-full bg-white text-ink/50 transition hover:bg-stone"
+                            aria-label={`Remove ${item.title}`}
+                          >
+                            <X size={15} />
+                          </button>
+                        )}
+                      </div>
                       <h4 className="mt-3 font-semibold text-ink">{item.title}</h4>
                       {item.description && <p className="mt-2 text-sm leading-6 text-ink/62">{item.description}</p>}
                     </div>
@@ -1309,8 +1252,71 @@ function FullTributeReview({ name, years, message, story, primaryPhoto, photos, 
                 ))}
               </div>
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="mt-5 rounded-2xl border border-dashed border-rich-purple/20 bg-cream p-4 text-sm leading-6 text-ink/60">
+              Add birth and passing dates, or add an important date below, to begin the timeline.
+            </div>
+          )}
+            {isTimelineFormOpen ? (
+              <div className="mt-5 rounded-3xl border border-rich-purple/15 bg-light-purple/40 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-deep-purple">Add an important date</p>
+                    <p className="mt-1 text-sm leading-6 text-ink/60">A wedding, move, milestone, favorite chapter, or family moment.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTimelineForm(initialTimelineForm);
+                      setIsTimelineFormOpen(false);
+                    }}
+                    className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-ink/60 transition hover:bg-cream"
+                    aria-label="Cancel timeline entry"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-[9rem_1fr]">
+                  <input
+                    value={timelineForm.year}
+                    onChange={(event) => setTimelineForm((current) => ({ ...current, year: event.target.value }))}
+                    placeholder="Year or date"
+                    inputMode="numeric"
+                    className="min-h-12 rounded-full border border-ink/10 bg-white px-4 outline-none focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
+                  />
+                  <input
+                    value={timelineForm.title}
+                    onChange={(event) => setTimelineForm((current) => ({ ...current, title: event.target.value }))}
+                    placeholder="What happened?"
+                    className="min-h-12 rounded-full border border-ink/10 bg-white px-4 outline-none focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
+                  />
+                </div>
+                <textarea
+                  value={timelineForm.description}
+                  onChange={(event) => setTimelineForm((current) => ({ ...current, description: event.target.value }))}
+                  placeholder="Add a few details, if you want."
+                  rows={3}
+                  className="mt-3 w-full resize-none rounded-3xl border border-ink/10 bg-white px-4 py-3 leading-7 outline-none focus:border-rich-purple focus:ring-4 focus:ring-rich-purple/10"
+                />
+                <button
+                  type="button"
+                  onClick={addDraftTimelineEvent}
+                  disabled={!timelineForm.year.trim() || !timelineForm.title.trim()}
+                  className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-deep-purple px-5 font-semibold text-white transition hover:bg-rich-purple disabled:cursor-not-allowed disabled:bg-deep-purple/40 sm:w-auto"
+                >
+                  Add to Timeline
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsTimelineFormOpen(true)}
+                className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-rich-purple/25 bg-white px-5 text-sm font-semibold text-deep-purple transition hover:bg-light-purple sm:w-auto"
+              >
+                <Plus size={16} /> Add an important date
+              </button>
+            )}
+        </section>
 
         {photos.length > 0 && (
           <section className="mt-4 rounded-[1.5rem] border border-ink/10 bg-white p-4 shadow-sm sm:mt-5 sm:rounded-3xl sm:p-5">
@@ -1319,7 +1325,12 @@ function FullTributeReview({ name, years, message, story, primaryPhoto, photos, 
               {photos.slice(0, 8).map((photo) => (
                 <figure key={photo.id} className="overflow-hidden rounded-2xl border border-ink/10 bg-cream">
                   <img src={photo.previewUrl} alt={photo.caption || photo.name} className="aspect-square w-full object-cover" />
-                  {photo.caption && <figcaption className="px-3 py-2 text-xs leading-5 text-ink/62">{photo.caption}</figcaption>}
+                  <input
+                    value={photo.caption}
+                    onChange={(event) => onPhotoCaptionChange(photo.id, event.target.value)}
+                    placeholder="Add a caption"
+                    className="w-full border-0 bg-white px-3 py-2 text-xs leading-5 text-ink/70 outline-none placeholder:text-ink/35 focus:bg-light-purple/30"
+                  />
                 </figure>
               ))}
             </div>
